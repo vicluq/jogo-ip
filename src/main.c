@@ -110,5 +110,6 @@ int main()
 }
 /*
    TODO Inimigo
-    Movimentação do inimigo similar a câmera
+    Movimentação do inimigo similar a câmera, para perseguir o personagem
+    Comparação de posição inimigo-personagem para gerar movimento do inimigo
 */

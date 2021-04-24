@@ -1,0 +1,1 @@
+// TODO Função pra popular struct de inimigo

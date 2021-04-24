@@ -1,0 +1,11 @@
+{
+    "workbench.colorCustomizations": {
+        "[Monokai]": {
+            "editorLineNumber.activeForeground": "#1fafad",
+            "editor.background": "#1c2b2b"
+        },
+        "activityBar.background": "#0A3519",
+        "titleBar.activeBackground": "#0E4A23",
+        "titleBar.activeForeground": "#F2FCF5"
+    }
+}

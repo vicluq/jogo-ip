@@ -1,5 +1,6 @@
 #include <raylib.h>
 #include <math.h>
+#include "utils.h"
 
 // Misc Utilities
 float distanceToEnemy(float pX, float pY, float eX, float eY)

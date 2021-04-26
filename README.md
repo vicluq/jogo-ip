@@ -1,4 +1,4 @@
-# Cucabeludo em: A Luta contra o exército da cloquina do Bostãonaro
+# Cucabeludo em: A Luta contra o exército da cloquina do Capitão Bostãonaro
 
 ## Sobre o Jogo
 

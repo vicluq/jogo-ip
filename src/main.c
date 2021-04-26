@@ -23,27 +23,52 @@ int main()
     Camera2D camera = {.offset = {screenWidth / 2.0f, screenHeight / 2.0f},
                        .target = {0},
                        .rotation = 0,
-                       .zoom = 1};
+                       .zoom = 0.5};
+
+    // Loading Textures
+    char filename[31];
+    Texture movesHorizontal[2][5];
+    Texture movesVertical[2][3];
+    int currentMoveXL = 0, currentMoveXR = 0, currentMoveYU = 0, currentMoveYD = 0;
+
+    for (int j = 1; j <= 5; ++j)
+    {
+        sprintf(filename, "./assets/Base/baseA1%d.png", j);
+        movesHorizontal[0][j - 1] = LoadTexture(filename);
+
+        sprintf(filename, "./assets/Base/baseA2%d.png", j);
+        movesHorizontal[1][j - 1] = LoadTexture(filename);
+    }
+
+    for (int j = 1; j <= 3; ++j)
+    {
+        sprintf(filename, "./assets/Base/baseB1%d.png", j);
+        movesVertical[0][j - 1] = LoadTexture(filename);
+
+        sprintf(filename, "./assets/Base/baseB2%d.png", j);
+        movesVertical[1][j - 1] = LoadTexture(filename);
+    }
 
     // Player related
-    Rectangle player1 = {-50, -30, 60, 30};
+    Rectangle player1 = {-50, -30, movesHorizontal[1][1].width / 2, movesHorizontal[1][1].height / 1.7};
     const float playerSpeed = 15, pLife = 100;
     float previousX = 0, previousY = 0;
 
     // Player Life
-    Rectangle plifeBar = {10, 10, pLife, 20};
-    Rectangle plifeBarBox = {5, 5, pLife + 10, 30};
+    Rectangle playerlifeBar = {10, 10, pLife, 20};
+    Rectangle playerlifeBarBox = {5, 5, pLife + 10, 30};
 
     // Player Weapons
     Rectangle weaponRight = {player1.x, player1.y, 0, 0};
     Rectangle weaponLeft = {player1.x, player1.y, 0, 0};
 
     // Enemies
-    Rectangle enemy = {1000, 120, 40, 40};
-    Rectangle elifeBar = {1000, 130, 100, 5};
+    Texture cloroquina = LoadTexture("./assets/Cloroquina/cloroquina2-removebg-preview.png");
+    Rectangle enemy = {1000, 120, movesHorizontal[1][1].width / 2, movesHorizontal[1][1].height / 1.7};
+    Rectangle enemylifeBar = {1000, 130, 100, 5};
     const int enemySpeed = 15;
 
-    // NOTE Ciclo do jogo
+    // Ciclo do jogo
     while (!WindowShouldClose())
     {
         // Player Motion
@@ -52,32 +77,32 @@ int main()
 
         if (IsKeyPressed(KEY_W) || IsKeyDown(KEY_W))
         {
-            player1.y -= playerSpeed * 0.3;
+            player1.y -= playerSpeed * 0.55;
         }
 
         if (IsKeyPressed(KEY_D) || IsKeyDown(KEY_D))
         {
-            player1.x += playerSpeed * 0.3;
+            player1.x += playerSpeed * 0.55;
         }
 
         if (IsKeyPressed(KEY_S) || IsKeyDown(KEY_S))
         {
-            player1.y += playerSpeed * 0.3;
+            player1.y += playerSpeed * 0.55;
         }
 
         if (IsKeyPressed(KEY_A) || IsKeyDown(KEY_A))
         {
-            player1.x -= playerSpeed * 0.3;
+            player1.x -= playerSpeed * 0.55;
         }
 
         // Enemy Dinamic
-        if (distanceToEnemy(player1.x, player1.y, enemy.x, enemy.y) <= 300)
+        if (distanceToEnemy(player1.x, player1.y, enemy.x, enemy.y) <= 500)
         {
-            enemyDinamic(player1, &enemy, enemySpeed, &plifeBar.width);
+            enemyDinamic(player1, &enemy, enemySpeed, &playerlifeBar.width);
         }
 
-        elifeBar.x = enemy.x;
-        elifeBar.y = enemy.y - 10;
+        enemylifeBar.x = enemy.x;
+        enemylifeBar.y = enemy.y - 10;
 
         //  Camera
         if ((previousY != player1.y) || (previousX != player1.x))
@@ -90,35 +115,135 @@ int main()
         BeginDrawing();
 
         ClearBackground(RAYWHITE);
-        DrawRectangleRec(plifeBarBox, BLACK);
-        DrawRectangleRec(plifeBar, GREEN);
+        DrawRectangleRec(playerlifeBarBox, BLACK);
+        DrawRectangleRec(playerlifeBar, GREEN);
 
-        if (plifeBar.width < 0)
+        if (playerlifeBar.width < 0)
         {
-            DrawText("SE FUDEEEU", (screenWidth / 2) - 600, (screenHeight / 2) - 100, 200, RED);
-        }
-
-        if (CheckCollisionRecs(weaponRight, enemy) || CheckCollisionRecs(weaponLeft, enemy))
-        {
-            DrawText("COLISÃOOOO", screenWidth / 2, 10, 20, RED);
-            elifeBar.width -= 10;
+            DrawText("  SE FUDEEEU\nCLOROQUINADO", (screenWidth / 2) - 800, (screenHeight / 2) - 280, 200, RED);
         }
 
         // NOTE 2d
         BeginMode2D(camera);
         DrawText("ISSO É MELHOR QUE LOL PPRT", 0 - 600, 0, 80, BLACK);
 
-        // Rendering Player
-        if (plifeBar.width > 0)
+        if (CheckCollisionRecs(weaponRight, enemy) || CheckCollisionRecs(weaponLeft, enemy))
         {
-            DrawRectangleRec(player1, RED);
+            enemylifeBar.width -= 10;
+        }
+
+        // Rendering Player
+        if (playerlifeBar.width > 0)
+        {
+            // DrawRectangleRec(player1, RED);
+            if (previousX > player1.x)
+            {
+                if (currentMoveXL == 0)
+                {
+                    DrawTexture(movesHorizontal[0][0], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                    ++currentMoveXL;
+                }
+                else if (currentMoveXL == 1)
+                {
+                    DrawTexture(movesHorizontal[0][1], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                    ++currentMoveXL;
+                }
+                else if (currentMoveXL == 2)
+                {
+                    DrawTexture(movesHorizontal[0][2], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                    ++currentMoveXL;
+                }
+                else if (currentMoveXL == 3)
+                {
+                    DrawTexture(movesHorizontal[0][3], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                    ++currentMoveXL;
+                }
+                else if (currentMoveXL == 4)
+                {
+                    DrawTexture(movesHorizontal[0][4], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                    currentMoveXL = 0;
+                }
+            }
+            else if (previousX < player1.x)
+            {
+                if (currentMoveXR == 0)
+                {
+                    DrawTexture(movesHorizontal[1][0], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                    ++currentMoveXR;
+                }
+                else if (currentMoveXR == 1)
+                {
+                    DrawTexture(movesHorizontal[1][1], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                    ++currentMoveXR;
+                }
+                else if (currentMoveXR == 2)
+                {
+                    DrawTexture(movesHorizontal[1][2], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                    ++currentMoveXR;
+                }
+                else if (currentMoveXR == 3)
+                {
+                    DrawTexture(movesHorizontal[1][3], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                    ++currentMoveXR;
+                }
+                else if (currentMoveXR == 4)
+                {
+                    DrawTexture(movesHorizontal[1][4], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                    currentMoveXR = 0;
+                }
+            }
+            else if (previousY < player1.y)
+            {
+                if (currentMoveYU == 0)
+                {
+                    DrawTexture(movesVertical[0][0], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                    ++currentMoveYU;
+                }
+                else if (currentMoveYU == 1)
+                {
+                    DrawTexture(movesVertical[0][1], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                    ++currentMoveYU;
+                }
+                else if (currentMoveYU == 2)
+                {
+                    DrawTexture(movesVertical[0][2], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                    currentMoveYU = 0;
+                }
+            }
+            else if (previousY > player1.y)
+            {
+                if (currentMoveYD == 0)
+                {
+                    DrawTexture(movesVertical[1][0], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                    ++currentMoveYD;
+                }
+                else if (currentMoveYD == 1)
+                {
+                    DrawTexture(movesVertical[1][1], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                    ++currentMoveYD;
+                }
+                else if (currentMoveYD == 2)
+                {
+                    DrawTexture(movesVertical[1][2], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                    currentMoveYD = 0;
+                }
+            }
+            else if (previousX == player1.x)
+            {
+                DrawTexture(movesVertical[0][1], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+            }
+            else if (previousY == player1.y)
+            {
+                DrawTexture(movesVertical[0][1], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+            }
         }
 
         // Rendering Enemy
-        if (elifeBar.width > 0)
+        if (enemylifeBar.width > 0)
         {
-            DrawRectangleRec(enemy, BLACK);
-            DrawRectangleRec(elifeBar, GREEN);
+            // DrawRectangleRec(enemy, WHITE);
+            DrawTexture(cloroquina, enemy.x - (enemy.width * 0.8), enemy.y - 10, WHITE);
+            DrawRectangleRec(enemylifeBar, GREEN);
         }
         else
         {
@@ -129,7 +254,7 @@ int main()
         // Combat mechanics
         if (IsKeyPressed(KEY_K))
         {
-            weaponRight.width = 30;
+            weaponRight.width = 60;
             weaponRight.height = 15;
             weaponRight.x = player1.x + player1.width;
             weaponRight.y = player1.y + 2;
@@ -145,7 +270,7 @@ int main()
 
         if (IsKeyPressed(KEY_J))
         {
-            weaponLeft.width = 30;
+            weaponLeft.width = 60;
             weaponLeft.height = 15;
             weaponLeft.x = player1.x - weaponLeft.width;
             weaponLeft.y = player1.y + 2;
@@ -166,78 +291,48 @@ int main()
     return 0;
 }
 
-void renderBasics()
-{
-}
-
 void enemyDinamic(Rectangle player, Rectangle *enemy, int speed, float *playerLifeBar)
 {
     if (player.x - enemy->x > 0)
     {
-        enemy->x += (float)speed * 0.1;
+        enemy->x += (float)speed * 0.2;
     }
     else if (player.x - enemy->x < 0)
     {
-        enemy->x -= (float)speed * 0.1;
+        enemy->x -= (float)speed * 0.2;
     }
 
     if (player.y - enemy->y > 0)
     {
-        enemy->y += (float)speed * 0.1;
+        enemy->y += (float)speed * 0.2;
     }
     else if (player.y - enemy->y < 0)
     {
-        enemy->y -= (float)speed * 0.1;
+        enemy->y -= (float)speed * 0.2;
     }
 
     if (CheckCollisionRecs(player, *enemy) && enemy->x >= player.x && enemy->y >= player.y)
     {
         *playerLifeBar -= 10;
-        enemy->x += 90;
-        enemy->y += 90;
+        enemy->x += 150;
+        enemy->y += 150;
     }
     if (CheckCollisionRecs(player, *enemy) && enemy->x <= player.x && enemy->y >= player.y)
     {
         *playerLifeBar -= 10;
-        enemy->x -= 90;
-        enemy->y += 90;
+        enemy->x -= 150;
+        enemy->y += 150;
     }
     if (CheckCollisionRecs(player, *enemy) && enemy->x >= player.x && enemy->y <= player.y)
     {
         *playerLifeBar -= 10;
-        enemy->x += 90;
-        enemy->y -= 90;
+        enemy->x += 150;
+        enemy->y -= 150;
     }
     if (CheckCollisionRecs(player, *enemy) && enemy->x <= player.x && enemy->y <= player.y)
     {
         *playerLifeBar -= 10;
-        enemy->x -= 90;
-        enemy->y -= 90;
+        enemy->x -= 150;
+        enemy->y -= 150;
     }
-
-    // if ((enemy->x <= pX + 60 && *eX >= pX) && )
-    // {
-    //     *eX += 90;
-    //     *eY += 90;
-    // }
-    // if ((*eX + 40 >= pX && *eX + 40 <= pX + 60) && )
-    //     {
-    //         *eX += 90;
-    //         *eY += 90;
-    //     }
-    // if (*eX == pX && *eY == pY)
-    // {
-    //     *eX += 120;
-    //     *eY += 120;
-    // }
-    // if (*eY >= pY + 30)
-    // {
-    //     *eX -= 30;
-    //     *eY -= 30;
-    // }
 }
-/*
-   TODO Inimigo
-    Movimentação do inimigo similar a câmera, para perseguir o personagem
-    Comparação de posição inimigo-personagem para gerar movimento do inimigo
-*/

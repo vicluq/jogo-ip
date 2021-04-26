@@ -2,7 +2,7 @@
 
 ## Sobre o Jogo
 
-Não é nvidade para ninguém que o Brasil está na mais profunda bosta em todos os aspectos, principalmente na **pandemia**, e que o grande vilão desse feito é o presidente Jair Bolsxnaro, para os ín(imigos)timos, **Capi(tocão)tão Bostãonaro**.
+Não é novidade para ninguém que o Brasil está na mais profunda bosta em todos os aspectos, principalmente na **pandemia**, e que o grande vilão desse feito é o presidente Jair Bolsxnaro, para os ín(imigos)timos, **Capi(tocão)tão Bostãonaro**.
 
 Diante desse cenário lamentável, nosso herói, **Cucabeludo jr**. - não existe um Cucabeludo Pai, mas o "jr.", por algum motivo, dá um toque legal, só aceite - decidiu sair Brasil a fora numa brava missão de derrotar o exército cloroquinado do Bostão. 
 

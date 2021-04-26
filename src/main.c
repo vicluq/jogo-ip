@@ -4,13 +4,7 @@
 #include <raylib.h>
 #include <stdio.h>
 #include <math.h>
-
-void enemyDinamic(Rectangle player, Rectangle *enemy, int speed, float *playerLifeBar);
-float distanceToEnemy(float pX, float pY, float eX, float eY)
-{
-    float expression = sqrt(((pX - eX) * (pX - eX)) + ((pY - eY) * (pY - eY)));
-    return expression;
-}
+#include "./utils/utils.h"
 
 int main()
 {
@@ -19,8 +13,8 @@ int main()
     if (!IsWindowFullscreen())
         ToggleFullscreen();
 
-    double gameTime = 0;
-    int menuMode = 1;
+    double gameTime = 0, gameOverTime = 0;
+    int menuMode = 1, gameOverMode = 0;
 
     const int screenWidth = GetScreenWidth(), screenHeight = GetScreenHeight();
     SetTargetFPS(60);
@@ -29,7 +23,6 @@ int main()
     Vector2 mouse = {.x = 0, .y = 0};
 
     // Menu Elements
-    char GameTitle[31] = "ANTI BOZO PATROL\n";
     char menuOptionsText[2][10] = {"Start", "Close"};
     Rectangle menuOptions[2] = {
         {.height = 100, .width = 400, .x = (screenWidth / 2) - 200, .y = 500},
@@ -71,6 +64,7 @@ int main()
     float previousX = 0, previousY = 0;
 
     // Player Life
+    int isAlive = 1;
     Rectangle playerlifeBar = {10, 10, pLife, 20};
     Rectangle playerlifeBarBox = {5, 5, pLife + 10, 30};
 
@@ -89,42 +83,9 @@ int main()
     {
         if (menuMode)
         {
-            mouse = GetMousePosition();
-
-            BeginDrawing();
-
-            ClearBackground(WHITE);
-
-            DrawText(GameTitle, (screenWidth / 2) - (MeasureText(GameTitle, 70) / 2), 300, 70, BLUE);
-
-            if (CheckCollisionPointRec(mouse, menuOptions[0]))
-                DrawRectangleRec(menuOptions[0], GREEN);
-            else
-                DrawRectangleRec(menuOptions[0], BLUE);
-
-            if (CheckCollisionPointRec(mouse, menuOptions[1]))
-                DrawRectangleRec(menuOptions[1], GREEN);
-            else
-                DrawRectangleRec(menuOptions[1], BLUE);
-
-            DrawText("Start", menuOptions[0].x + (MeasureText("Start", 70) / 2), menuOptions[0].y + (menuOptions[0].height / 4.2), 70, BLACK);
-            DrawText("Close", menuOptions[1].x + (MeasureText("Close", 70) / 2), menuOptions[1].y + (menuOptions[1].height / 4.2), 70, BLACK);
-
-            // Mouse
-            DrawCircleV(mouse, 10, GREEN);
-
-            if (CheckCollisionPointRec(mouse, menuOptions[0]) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-            {
-                menuMode = 0;
-            }
-
-            if (CheckCollisionPointRec(mouse, menuOptions[1]) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
-            {
-                CloseWindow();
-            }
-
-            EndDrawing();
+            renderMenu(&mouse, screenWidth, menuOptions, &menuMode);
         }
+
         else
         {
             gameTime = GetTime();
@@ -166,12 +127,26 @@ int main()
             DrawRectangleRec(playerlifeBarBox, BLACK);
             DrawRectangleRec(playerlifeBar, GREEN);
 
+            // Setting GameOver
             if (playerlifeBar.width < 0)
             {
-                DrawText("  SE FUDEEEU\nCLOROQUINADO", (screenWidth / 2) - 800, (screenHeight / 2) - 280, 200, RED);
+                if (isAlive)
+                {
+                    gameOverTime = GetTime();
+                    isAlive = 0;
+                }
+
+                if (!isAlive && gameTime - gameOverTime <= 5)
+                {
+                    DrawText("  SE FUDEEEU\nCLOROQUINADO", (screenWidth / 2) - 800, (screenHeight / 2) - 280, 200, RED);
+                }
+                else
+                {
+                    gameOverMode = 1;
+                }
             }
 
-            // NOTE 2d
+            // Modo 2D
             BeginMode2D(camera);
 
             DrawText("ISSO É MELHOR QUE LOL PPRT", 0 - 600, 0, 80, BLACK);
@@ -180,13 +155,6 @@ int main()
             {
                 enemylifeBar.width -= 10;
             }
-
-            // Enemy Dinamic
-            if (distanceToEnemy(player1.x, player1.y, enemy.x, enemy.y) <= 500)
-                enemyDinamic(player1, &enemy, enemySpeed, &playerlifeBar.width);
-
-            enemylifeBar.x = enemy.x;
-            enemylifeBar.y = enemy.y - 10;
 
             // Rendering Player
             if (playerlifeBar.width > 0)
@@ -307,6 +275,15 @@ int main()
                 enemy.y = 9999999;
             }
 
+            // Enemy Dinamic
+            if (distanceToEnemy(player1.x, player1.y, enemy.x, enemy.y) <= 500)
+            {
+                enemyDinamic(player1, &enemy, enemySpeed, &playerlifeBar.width);
+            }
+
+            enemylifeBar.x = enemy.x;
+            enemylifeBar.y = enemy.y - 10;
+
             // Combat mechanics
             if (IsKeyPressed(KEY_K))
             {
@@ -346,51 +323,4 @@ int main()
     }
 
     return 0;
-}
-
-void enemyDinamic(Rectangle player, Rectangle *enemy, int speed, float *playerLifeBar)
-{
-
-    if (player.x - enemy->x > 0)
-    {
-        enemy->x += (float)speed * 0.2;
-    }
-    else if (player.x - enemy->x < 0)
-    {
-        enemy->x -= (float)speed * 0.2;
-    }
-
-    if (player.y - enemy->y > 0)
-    {
-        enemy->y += (float)speed * 0.2;
-    }
-    else if (player.y - enemy->y < 0)
-    {
-        enemy->y -= (float)speed * 0.2;
-    }
-
-    if (CheckCollisionRecs(player, *enemy) * enemy->x >= player.x && enemy->y >= player.y)
-    {
-        *playerLifeBar -= 10;
-        enemy->x += 150;
-        enemy->y += 150;
-    }
-    if (CheckCollisionRecs(player, *enemy) && enemy->x <= player.x && enemy->y >= player.y)
-    {
-        *playerLifeBar -= 10;
-        enemy->x -= 150;
-        enemy->y += 150;
-    }
-    if (CheckCollisionRecs(player, *enemy) && enemy->x >= player.x && enemy->y <= player.y)
-    {
-        *playerLifeBar -= 10;
-        enemy->x += 150;
-        enemy->y -= 150;
-    }
-    if (CheckCollisionRecs(player, *enemy) && enemy->x <= player.x && enemy->y <= player.y)
-    {
-        *playerLifeBar -= 10;
-        enemy->x -= 150;
-        enemy->y -= 150;
-    }
 }

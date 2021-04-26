@@ -127,7 +127,7 @@ int main()
             DrawRectangleRec(playerlifeBarBox, BLACK);
             DrawRectangleRec(playerlifeBar, GREEN);
 
-            // Setting GameOver
+            // Mecânica de vida do player e GameOver -> Nova branch
             if (playerlifeBar.width < 0)
             {
                 if (isAlive)

@@ -1,5 +1,7 @@
 #include <raylib.h>
 #include <math.h>
+#include <time.h>
+#include <stdlib.h>
 #include "utils.h"
 
 // Misc Utilities
@@ -11,7 +13,8 @@ float distanceToEnemy(float pX, float pY, float eX, float eY)
 
 // Menu Utilities
 char GameTitle[31] = "ANTI BOZO PATROL\n";
-void renderMenu(Vector2 *mouse, int screenWidth, Rectangle menuOptions[2], int *menuMode, int *closeGame)
+char GameCredits[51] = "Created by computer engeneering students at UFPE ©";
+void renderMenu(Vector2 *mouse, int screenWidth, int screenHeight, Rectangle menuOptions[2], int *menuMode, int *closeGame)
 {
     *mouse = GetMousePosition();
 
@@ -20,6 +23,7 @@ void renderMenu(Vector2 *mouse, int screenWidth, Rectangle menuOptions[2], int *
     ClearBackground(WHITE);
 
     DrawText(GameTitle, (screenWidth / 2) - (MeasureText(GameTitle, 70) / 2), 300, 70, BLUE);
+    DrawText(GameCredits, screenWidth / 2 - (MeasureText(GameTitle, 70) / 2.5), screenHeight - 40, 20, BLACK);
 
     if (CheckCollisionPointRec(*mouse, menuOptions[0]))
         DrawRectangleRec(menuOptions[0], GREEN);
@@ -72,26 +76,30 @@ void enemyDinamic(Rectangle player, Rectangle *enemy, int speed, float *playerLi
         enemy->y -= (float)speed * 0.2;
     }
 
-    if (CheckCollisionRecs(player, *enemy) * enemy->x >= player.x && enemy->y >= player.y)
+    if (CheckCollisionRecs(player, *enemy) && enemy->x >= player.x && enemy->y >= player.y)
     {
+        printf("COLIDIU\n");
         *playerLifeBar -= 10;
         enemy->x += 150;
         enemy->y += 150;
     }
     if (CheckCollisionRecs(player, *enemy) && enemy->x <= player.x && enemy->y >= player.y)
     {
+        printf("COLIDIU\n");
         *playerLifeBar -= 10;
         enemy->x -= 150;
         enemy->y += 150;
     }
     if (CheckCollisionRecs(player, *enemy) && enemy->x >= player.x && enemy->y <= player.y)
     {
+        printf("COLIDIU\n");
         *playerLifeBar -= 10;
         enemy->x += 150;
         enemy->y -= 150;
     }
     if (CheckCollisionRecs(player, *enemy) && enemy->x <= player.x && enemy->y <= player.y)
     {
+        printf("COLIDIU\n");
         *playerLifeBar -= 10;
         enemy->x -= 150;
         enemy->y -= 150;

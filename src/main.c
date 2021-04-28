@@ -1,8 +1,10 @@
 #include <raylib.h>
 #include <stdio.h>
 #include <math.h>
-#include <time.h>
 #include "./utils/utils.h"
+
+void renderEnemies(float playerH, float playerW, float pX, float pY, Rectangle *enemies, int enemyAmount);
+void renderEnemyLifeBar(Rectangle *enemies, Rectangle *lifebars, int enemyAmount);
 
 int main()
 {
@@ -63,7 +65,9 @@ int main()
         movesVertical[1][j - 1] = LoadTexture(filename);
     }
 
-    Rectangle player1 = {-50, -30, movesHorizontal[1][1].width / 2, movesHorizontal[1][1].height / 1.7};
+    Rectangle player1 = {0, 0, movesHorizontal[1][1].width / 2, movesHorizontal[1][1].height / 1.7};
+    int score = 0;
+    char scoreText[50];
     const float playerSpeed = 15, pLife = 393;
     float previousX = 0, previousY = 0;
 
@@ -77,17 +81,28 @@ int main()
     Rectangle weaponLeft = {player1.x, player1.y, 0, 0};
 
     // Enemies
+    const int enemySpeed = 15, enemyAmount = 15;
     Texture cloroquina = LoadTexture("./assets/Cloroquina/cloroquina2-removebg-preview.png");
-    Rectangle enemy = {1000, 120, movesHorizontal[1][1].width / 2, movesHorizontal[1][1].height / 1.7};
-    Rectangle enemylifeBar = {1000, 130, 100, 5};
-    const int enemySpeed = 15;
+    Rectangle *enemies = (Rectangle *)malloc(sizeof(Rectangle) * enemyAmount);
+    Rectangle *enemylifeBars = (Rectangle *)malloc(sizeof(Rectangle) * enemyAmount);
+
+    if (enemies != NULL && enemylifeBars != NULL)
+    {
+        renderEnemies(movesHorizontal[1][1].height, movesHorizontal[1][1].width, player1.x, player1.y, enemies, enemyAmount);
+        renderEnemyLifeBar(enemies, enemylifeBars, enemyAmount);
+    }
+    else
+    {
+        CloseWindow();
+        exit(1);
+    }
 
     // Ciclo do jogo
     while (!WindowShouldClose() && !closeGame)
     {
         if (menuMode)
         {
-            renderMenu(&mouse, screenWidth, menuOptions, &menuMode, &closeGame);
+            renderMenu(&mouse, screenWidth, screenHeight, menuOptions, &menuMode, &closeGame);
         }
 
         else
@@ -125,12 +140,22 @@ int main()
                 camera.target.y += ((player1.y) - camera.target.y) * 0.025;
             }
 
+            for (int i = 0; i < enemyAmount; ++i)
+            {
+                if (enemylifeBars[i].width <= 0)
+                {
+                    ++score;
+                }
+            }
+            sprintf(scoreText, "SCORE: %d", score);
+
             // Drawing mode
             BeginDrawing();
 
             ClearBackground(RAYWHITE);
             DrawTexture(playerLifeBar, 0, 0, WHITE);
             DrawRectangleRec(playerlifeBar, GREEN);
+            DrawText(scoreText, 10, 100, 20, BLACK);
 
             // Mecânica de vida do player e GameOver -> Nova branch
             if (playerlifeBar.width <= 0)
@@ -155,11 +180,6 @@ int main()
             BeginMode2D(camera);
 
             DrawText("ISSO É MELHOR QUE LOL PPRT", 0 - 600, 0, 80, BLACK);
-
-            if (CheckCollisionRecs(weaponRight, enemy) || CheckCollisionRecs(weaponLeft, enemy))
-            {
-                enemylifeBar.width -= 10;
-            }
 
             // Rendering Player
             if (playerlifeBar.width > 0)
@@ -268,26 +288,32 @@ int main()
             }
 
             // Rendering Enemy
-            if (enemylifeBar.width > 0)
+            for (int i = 0; i < enemyAmount; ++i)
             {
-                // DrawRectangleRec(enemy, WHITE);
-                DrawTexture(cloroquina, enemy.x - (enemy.width * 0.8), enemy.y - 10, WHITE);
-                DrawRectangleRec(enemylifeBar, GREEN);
-            }
-            else
-            {
-                enemy.x = 9999999;
-                enemy.y = 9999999;
-            }
+                if (CheckCollisionRecs(weaponRight, enemies[i]) || CheckCollisionRecs(weaponLeft, enemies[i]))
+                {
+                    enemylifeBars[i].width -= 10;
+                }
+                // Rendering each enemy box
+                if (enemylifeBars[i].width > 0)
+                {
+                    DrawTexture(cloroquina, enemies[i].x - (enemies[i].width * 0.8), enemies[i].y - 10, WHITE);
+                    DrawRectangleRec(enemylifeBars[i], GREEN);
+                }
+                else
+                {
+                    enemies[i].x = 9999999;
+                    enemies[i].y = 9999999;
+                }
 
-            // Enemy Dinamic
-            if (distanceToEnemy(player1.x, player1.y, enemy.x, enemy.y) <= 500)
-            {
-                enemyDinamic(player1, &enemy, enemySpeed, &playerlifeBar.width);
+                // Enemy Dinamic
+                if (distanceToEnemy(player1.x, player1.y, enemies[i].x, enemies[i].y) <= 600)
+                {
+                    enemyDinamic(player1, &enemies[i], enemySpeed, &playerlifeBar.width);
+                }
+                enemylifeBars[i].x = enemies[i].x;
+                enemylifeBars[i].y = enemies[i].y - 10;
             }
-
-            enemylifeBar.x = enemy.x;
-            enemylifeBar.y = enemy.y - 10;
 
             // Combat mechanics
             if (IsKeyPressed(KEY_K))
@@ -324,9 +350,36 @@ int main()
 
             EndMode2D();
             EndDrawing();
+            score = 0;
         }
     }
 
     CloseWindow();
+    free(enemies);
+    free(enemylifeBars);
     return 0;
+}
+
+void renderEnemies(float playerH, float playerW, float pX, float pY, Rectangle *enemies, int enemyAmount)
+{
+    for (int i = 0; i < enemyAmount; ++i)
+    {
+        enemies[i].height = playerH / 1.7;
+        enemies[i].width = playerW / 2;
+
+        enemies[i].x = (i + (pX * 2) + 1) * 100;
+        enemies[i].y = (i + (pY * 2) + 1) + (i * enemies[i].x);
+    }
+}
+
+void renderEnemyLifeBar(Rectangle *enemies, Rectangle *lifeBars, int enemyAmount)
+{
+    for (int i = 0; i < enemyAmount; ++i)
+    {
+        lifeBars[i].height = 5;
+        lifeBars[i].width = 100;
+
+        lifeBars[i].x = enemies[i].x;
+        lifeBars[i].y = enemies[i].y + 10;
+    }
 }

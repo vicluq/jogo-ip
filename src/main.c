@@ -3,9 +3,6 @@
 #include <math.h>
 #include "./utils/utils.h"
 
-void renderEnemies(float playerH, float playerW, float pX, float pY, Rectangle *enemies, int enemyAmount);
-void renderEnemyLifeBar(Rectangle *enemies, Rectangle *lifebars, int enemyAmount);
-
 int main()
 {
     SetConfigFlags(FLAG_VSYNC_HINT);
@@ -358,28 +355,4 @@ int main()
     free(enemies);
     free(enemylifeBars);
     return 0;
-}
-
-void renderEnemies(float playerH, float playerW, float pX, float pY, Rectangle *enemies, int enemyAmount)
-{
-    for (int i = 0; i < enemyAmount; ++i)
-    {
-        enemies[i].height = playerH / 1.7;
-        enemies[i].width = playerW / 2;
-
-        enemies[i].x = (i + (pX * 2) + 1) * 100;
-        enemies[i].y = (i + (pY * 2) + 1) + (i * enemies[i].x);
-    }
-}
-
-void renderEnemyLifeBar(Rectangle *enemies, Rectangle *lifeBars, int enemyAmount)
-{
-    for (int i = 0; i < enemyAmount; ++i)
-    {
-        lifeBars[i].height = 5;
-        lifeBars[i].width = 100;
-
-        lifeBars[i].x = enemies[i].x;
-        lifeBars[i].y = enemies[i].y + 10;
-    }
 }

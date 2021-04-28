@@ -1,20 +1,24 @@
-/*
-    TODO Multiplos inimigos
-*/
 #include <raylib.h>
 #include <stdio.h>
 #include <math.h>
+#include <time.h>
 #include "./utils/utils.h"
 
 int main()
 {
     SetConfigFlags(FLAG_VSYNC_HINT);
     InitWindow(0, 0, "Game");
-    if (!IsWindowFullscreen())
-        ToggleFullscreen();
 
+    if (!IsWindowFullscreen())
+    {
+        ToggleFullscreen();
+    }
+
+    // Tempo Related
     double gameTime = 0, gameOverTime = 0;
-    int menuMode = 1, gameOverMode = 0;
+
+    // Telas e controles de transição
+    int menuMode = 1, closeGame = 0, gameOverMode = 0;
 
     const int screenWidth = GetScreenWidth(), screenHeight = GetScreenHeight();
     SetTargetFPS(60);
@@ -60,13 +64,13 @@ int main()
     }
 
     Rectangle player1 = {-50, -30, movesHorizontal[1][1].width / 2, movesHorizontal[1][1].height / 1.7};
-    const float playerSpeed = 15, pLife = 100;
+    const float playerSpeed = 15, pLife = 393;
     float previousX = 0, previousY = 0;
 
     // Player Life
     int isAlive = 1;
-    Rectangle playerlifeBar = {10, 10, pLife, 20};
-    Rectangle playerlifeBarBox = {5, 5, pLife + 10, 30};
+    Texture playerLifeBar = LoadTexture("./assets/HUD/barra.png");
+    Rectangle playerlifeBar = {92, 37, pLife, 18};
 
     // Player Weapons
     Rectangle weaponRight = {player1.x, player1.y, 0, 0};
@@ -79,16 +83,17 @@ int main()
     const int enemySpeed = 15;
 
     // Ciclo do jogo
-    while (!WindowShouldClose())
+    while (!WindowShouldClose() && !closeGame)
     {
         if (menuMode)
         {
-            renderMenu(&mouse, screenWidth, menuOptions, &menuMode);
+            renderMenu(&mouse, screenWidth, menuOptions, &menuMode, &closeGame);
         }
 
         else
         {
             gameTime = GetTime();
+
             // Player Motion
             previousY = player1.y;
             previousX = player1.x;
@@ -124,11 +129,11 @@ int main()
             BeginDrawing();
 
             ClearBackground(RAYWHITE);
-            DrawRectangleRec(playerlifeBarBox, BLACK);
+            DrawTexture(playerLifeBar, 0, 0, WHITE);
             DrawRectangleRec(playerlifeBar, GREEN);
 
             // Mecânica de vida do player e GameOver -> Nova branch
-            if (playerlifeBar.width < 0)
+            if (playerlifeBar.width <= 0)
             {
                 if (isAlive)
                 {
@@ -136,7 +141,7 @@ int main()
                     isAlive = 0;
                 }
 
-                if (!isAlive && gameTime - gameOverTime <= 5)
+                if (!isAlive && (gameTime - gameOverTime) <= 5)
                 {
                     DrawText("  SE FUDEEEU\nCLOROQUINADO", (screenWidth / 2) - 800, (screenHeight / 2) - 280, 200, RED);
                 }
@@ -322,5 +327,6 @@ int main()
         }
     }
 
+    CloseWindow();
     return 0;
 }

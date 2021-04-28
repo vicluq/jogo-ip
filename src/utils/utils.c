@@ -11,7 +11,7 @@ float distanceToEnemy(float pX, float pY, float eX, float eY)
 
 // Menu Utilities
 char GameTitle[31] = "ANTI BOZO PATROL\n";
-void renderMenu(Vector2 *mouse, int screenWidth, Rectangle menuOptions[2], int *menuMode)
+void renderMenu(Vector2 *mouse, int screenWidth, Rectangle menuOptions[2], int *menuMode, int *closeGame)
 {
     *mouse = GetMousePosition();
 
@@ -44,7 +44,7 @@ void renderMenu(Vector2 *mouse, int screenWidth, Rectangle menuOptions[2], int *
 
     if (CheckCollisionPointRec(*mouse, menuOptions[1]) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
     {
-        CloseWindow();
+        *closeGame = 1;
     }
 
     EndDrawing();

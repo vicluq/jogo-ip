@@ -7,6 +7,7 @@ int main()
 {
     SetConfigFlags(FLAG_VSYNC_HINT);
     InitWindow(0, 0, "Game");
+    InitAudioDevice();
 
     if (!IsWindowFullscreen())
     {
@@ -18,6 +19,13 @@ int main()
 
     // Telas e controles de transição
     int menuMode = 1, closeGame = 0, gameOverMode = 0;
+    int bossPhase = 0, phaseAnnouncement = 0, cloroquinaPhase = 1;
+    double phaseTransitionTime = 0;
+    char transitionText[] = "BOSTÃONARO FOI DERROTADO";
+
+    // Sounds
+    Sound audioBozo = LoadSound("./assets/bozo-pal.wav");
+    SetMasterVolume(0.5f);
 
     const int screenWidth = GetScreenWidth(), screenHeight = GetScreenHeight();
     SetTargetFPS(60);
@@ -27,6 +35,7 @@ int main()
 
     // Menu Elements
     char menuOptionsText[2][10] = {"Start", "Close"};
+    Texture2D menuCape = LoadTexture("./assets/menu.png");
     Rectangle menuOptions[2] = {
         {.height = 100, .width = 400, .x = (screenWidth / 2) - 200, .y = 500},
         {.height = 100, .width = 400, .x = (screenWidth / 2) - 200, .y = 500 + (1.5 * menuOptions[0].height)},
@@ -38,13 +47,17 @@ int main()
                        .rotation = 0,
                        .zoom = 0.5};
 
+    // Map
+    Texture2D EnemyMap = LoadTexture("./assets/mapa-teste.png");
+    Texture2D BossMap = LoadTexture("./assets/mapa-teste2.png");
+
     // Player related
     char filename[31];
-    Texture movesHorizontal[2][5];
+    Texture movesHorizontal[2][4];
     Texture movesVertical[2][3];
     int currentMoveXL = 0, currentMoveXR = 0, currentMoveYU = 0, currentMoveYD = 0;
 
-    for (int j = 1; j <= 5; ++j)
+    for (int j = 1; j <= 4; ++j)
     {
         sprintf(filename, "./assets/Base/baseA1%d.png", j);
         movesHorizontal[0][j - 1] = LoadTexture(filename);
@@ -65,20 +78,20 @@ int main()
     Rectangle player1 = {0, 0, movesHorizontal[1][1].width / 2, movesHorizontal[1][1].height / 1.7};
     int score = 0;
     char scoreText[50];
-    const float playerSpeed = 15, pLife = 393;
-    float previousX = 0, previousY = 0;
+    const float playerSpeed = 15;
+    float previousX = 0, previousY = 0, animationTime = 0.0f, pLife = 800;
 
     // Player Life
     int isAlive = 1;
     Texture playerLifeBar = LoadTexture("./assets/HUD/barra.png");
-    Rectangle playerlifeBar = {92, 37, pLife, 18};
+    float lifeBarPosX = 0, lifeBarPosY = 0;
 
     // Player Weapons
     Rectangle weaponRight = {player1.x, player1.y, 0, 0};
     Rectangle weaponLeft = {player1.x, player1.y, 0, 0};
 
     // Enemies
-    const int enemySpeed = 15, enemyAmount = 15;
+    const int enemySpeed = 15, enemyAmount = 4;
     Texture cloroquina = LoadTexture("./assets/Cloroquina/cloroquina2-removebg-preview.png");
     Rectangle *enemies = (Rectangle *)malloc(sizeof(Rectangle) * enemyAmount);
     Rectangle *enemylifeBars = (Rectangle *)malloc(sizeof(Rectangle) * enemyAmount);
@@ -99,7 +112,7 @@ int main()
     {
         if (menuMode)
         {
-            renderMenu(&mouse, screenWidth, screenHeight, menuOptions, &menuMode, &closeGame);
+            renderMenu(menuCape, &mouse, screenWidth, screenHeight, menuOptions, &menuMode, &closeGame);
         }
 
         else
@@ -137,6 +150,7 @@ int main()
                 camera.target.y += ((player1.y) - camera.target.y) * 0.025;
             }
 
+            // Checando Score
             for (int i = 0; i < enemyAmount; ++i)
             {
                 if (enemylifeBars[i].width <= 0)
@@ -144,18 +158,33 @@ int main()
                     ++score;
                 }
             }
-            sprintf(scoreText, "SCORE: %d", score);
+
+            // Tela Transição
+            if (score >= enemyAmount && phaseAnnouncement == 0 && bossPhase == 0)
+            {
+                phaseTransitionTime = GetTime();
+                cloroquinaPhase = 0;
+                phaseAnnouncement = 1;
+                PlaySound(audioBozo);
+            }
+            else if (score >= enemyAmount && gameTime - phaseTransitionTime > 33 && bossPhase == 0)
+            {
+                printf("FIM TRANSIÇÃO\n");
+                phaseAnnouncement = 0;
+                bossPhase = 1;
+            }
 
             // Drawing mode
             BeginDrawing();
+            ClearBackground(BLACK);
 
-            ClearBackground(RAYWHITE);
-            DrawTexture(playerLifeBar, 0, 0, WHITE);
-            DrawRectangleRec(playerlifeBar, GREEN);
-            DrawText(scoreText, 10, 100, 20, BLACK);
+            if (phaseAnnouncement)
+            {
+                DrawText(transitionText, (screenWidth / 2) - (MeasureText(transitionText, 70) / 2), (screenHeight / 2) - 50, 70, RED);
+            }
 
             // Mecânica de vida do player e GameOver -> Nova branch
-            if (playerlifeBar.width <= 0)
+            if (pLife <= 0)
             {
                 if (isAlive)
                 {
@@ -176,140 +205,208 @@ int main()
             // Modo 2D
             BeginMode2D(camera);
 
-            DrawText("ISSO É MELHOR QUE LOL PPRT", 0 - 600, 0, 80, BLACK);
+            // Tela Mapa
+            if (cloroquinaPhase)
+            {
+                DrawTextureEx(EnemyMap, (Vector2){.x = -2 * camera.offset.x, .y = -2 * camera.offset.y}, 0, 5, WHITE);
+            }
+            else if (bossPhase)
+            {
+                DrawTextureEx(BossMap, (Vector2){.x = -2 * camera.offset.x, .y = -2 * camera.offset.y}, 0, 3, WHITE);
+            }
 
             // Rendering Player
-            if (playerlifeBar.width > 0)
+            if (!phaseAnnouncement)
             {
-                // DrawRectangleRec(player1, RED);
-                if (previousX > player1.x)
+                if (pLife > 0)
                 {
-                    if (currentMoveXL == 0)
+                    // DrawRectangleRec(player1, RED);
+                    if (previousX > player1.x)
                     {
-                        DrawTexture(movesHorizontal[0][0], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
-                        ++currentMoveXL;
+                        animationTime += GetFrameTime();
+                        if (currentMoveXL == 0)
+                        {
+                            DrawTexture(movesHorizontal[0][0], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                            if (animationTime >= 0.2)
+                            {
+                                animationTime = 0;
+                                ++currentMoveXL;
+                            }
+                        }
+                        else if (currentMoveXL == 1)
+                        {
+                            DrawTexture(movesHorizontal[0][1], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                            if (animationTime >= 0.2)
+                            {
+                                animationTime = 0;
+                                ++currentMoveXL;
+                            }
+                        }
+                        else if (currentMoveXL == 2)
+                        {
+                            DrawTexture(movesHorizontal[0][2], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                            if (animationTime >= 0.2)
+                            {
+                                animationTime = 0;
+                                ++currentMoveXL;
+                            }
+                        }
+                        else if (currentMoveXL == 3)
+                        {
+                            DrawTexture(movesHorizontal[0][3], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                            if (animationTime >= 0.2)
+                            {
+                                animationTime = 0;
+                                currentMoveXL = 0;
+                            }
+                        }
                     }
-                    else if (currentMoveXL == 1)
+                    else if (previousX < player1.x)
                     {
-                        DrawTexture(movesHorizontal[0][1], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
-                        ++currentMoveXL;
+                        animationTime += GetFrameTime();
+                        if (currentMoveXR == 0)
+                        {
+                            DrawTexture(movesHorizontal[1][0], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                            if (animationTime >= 0.2)
+                            {
+                                animationTime = 0;
+                                ++currentMoveXR;
+                            }
+                        }
+                        else if (currentMoveXR == 1)
+                        {
+                            DrawTexture(movesHorizontal[1][1], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                            if (animationTime >= 0.2)
+                            {
+                                animationTime = 0;
+                                ++currentMoveXR;
+                            };
+                        }
+                        else if (currentMoveXR == 2)
+                        {
+                            DrawTexture(movesHorizontal[1][2], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                            if (animationTime >= 0.2)
+                            {
+                                animationTime = 0;
+                                ++currentMoveXR;
+                            }
+                        }
+                        else if (currentMoveXR == 3)
+                        {
+                            DrawTexture(movesHorizontal[1][3], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                            if (animationTime >= 0.2)
+                            {
+                                animationTime = 0;
+                                currentMoveXR = 0;
+                            }
+                        }
                     }
-                    else if (currentMoveXL == 2)
+                    else if (previousY < player1.y)
                     {
-                        DrawTexture(movesHorizontal[0][2], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
-                        ++currentMoveXL;
+                        animationTime += GetFrameTime();
+                        if (currentMoveYU == 0)
+                        {
+                            DrawTexture(movesVertical[0][0], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                            if (animationTime >= 0.2)
+                            {
+                                animationTime = 0;
+                                ++currentMoveYU;
+                            }
+                        }
+                        else if (currentMoveYU == 1)
+                        {
+                            DrawTexture(movesVertical[0][1], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                            if (animationTime >= 0.2)
+                            {
+                                animationTime = 0;
+                                ++currentMoveYU;
+                            }
+                        }
+                        else if (currentMoveYU == 2)
+                        {
+                            DrawTexture(movesVertical[0][2], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                            if (animationTime >= 0.2)
+                            {
+                                animationTime = 0;
+                                currentMoveYU = 0;
+                            }
+                        }
                     }
-                    else if (currentMoveXL == 3)
+                    else if (previousY > player1.y)
                     {
-                        DrawTexture(movesHorizontal[0][3], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
-                        ++currentMoveXL;
+                        animationTime += GetFrameTime();
+                        if (currentMoveYD == 0)
+                        {
+                            DrawTexture(movesVertical[1][0], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                            if (animationTime >= 0.2)
+                            {
+                                animationTime = 0;
+                                ++currentMoveYD;
+                            }
+                        }
+                        else if (currentMoveYD == 1)
+                        {
+                            DrawTexture(movesVertical[1][1], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                            if (animationTime >= 0.2)
+                            {
+                                animationTime = 0;
+                                ++currentMoveYD;
+                            }
+                        }
+                        else if (currentMoveYD == 2)
+                        {
+                            DrawTexture(movesVertical[1][2], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
+                            if (animationTime >= 0.2)
+                            {
+                                animationTime = 0;
+                                currentMoveYD = 0;
+                            }
+                        }
                     }
-                    else if (currentMoveXL == 4)
-                    {
-                        DrawTexture(movesHorizontal[0][4], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
-                        currentMoveXL = 0;
-                    }
-                }
-                else if (previousX < player1.x)
-                {
-                    if (currentMoveXR == 0)
-                    {
-                        DrawTexture(movesHorizontal[1][0], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
-                        ++currentMoveXR;
-                    }
-                    else if (currentMoveXR == 1)
-                    {
-                        DrawTexture(movesHorizontal[1][1], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
-                        ++currentMoveXR;
-                    }
-                    else if (currentMoveXR == 2)
-                    {
-                        DrawTexture(movesHorizontal[1][2], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
-                        ++currentMoveXR;
-                    }
-                    else if (currentMoveXR == 3)
-                    {
-                        DrawTexture(movesHorizontal[1][3], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
-                        ++currentMoveXR;
-                    }
-                    else if (currentMoveXR == 4)
-                    {
-                        DrawTexture(movesHorizontal[1][4], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
-                        currentMoveXR = 0;
-                    }
-                }
-                else if (previousY < player1.y)
-                {
-                    if (currentMoveYU == 0)
-                    {
-                        DrawTexture(movesVertical[0][0], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
-                        ++currentMoveYU;
-                    }
-                    else if (currentMoveYU == 1)
+                    else if (previousX == player1.x)
                     {
                         DrawTexture(movesVertical[0][1], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
-                        ++currentMoveYU;
                     }
-                    else if (currentMoveYU == 2)
+                    else if (previousY == player1.y)
                     {
-                        DrawTexture(movesVertical[0][2], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
-                        currentMoveYU = 0;
+                        DrawTexture(movesVertical[0][1], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
                     }
-                }
-                else if (previousY > player1.y)
-                {
-                    if (currentMoveYD == 0)
-                    {
-                        DrawTexture(movesVertical[1][0], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
-                        ++currentMoveYD;
-                    }
-                    else if (currentMoveYD == 1)
-                    {
-                        DrawTexture(movesVertical[1][1], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
-                        ++currentMoveYD;
-                    }
-                    else if (currentMoveYD == 2)
-                    {
-                        DrawTexture(movesVertical[1][2], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
-                        currentMoveYD = 0;
-                    }
-                }
-                else if (previousX == player1.x)
-                {
-                    DrawTexture(movesVertical[0][1], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
-                }
-                else if (previousY == player1.y)
-                {
-                    DrawTexture(movesVertical[0][1], player1.x - (player1.width / 1.8), player1.y - (player1.height / 2.5), WHITE);
                 }
             }
 
-            // Rendering Enemy
-            for (int i = 0; i < enemyAmount; ++i)
+            // Rendering Enemy - Cloroquinas - Telas Cloroquinas
+            if (cloroquinaPhase)
             {
-                if (CheckCollisionRecs(weaponRight, enemies[i]) || CheckCollisionRecs(weaponLeft, enemies[i]))
+                for (int i = 0; i < enemyAmount; ++i)
                 {
-                    enemylifeBars[i].width -= 10;
-                }
-                // Rendering each enemy box
-                if (enemylifeBars[i].width > 0)
-                {
-                    DrawTexture(cloroquina, enemies[i].x - (enemies[i].width * 0.8), enemies[i].y - 10, WHITE);
-                    DrawRectangleRec(enemylifeBars[i], GREEN);
-                }
-                else
-                {
-                    enemies[i].x = 9999999;
-                    enemies[i].y = 9999999;
-                }
+                    if (CheckCollisionRecs(weaponRight, enemies[i]) || CheckCollisionRecs(weaponLeft, enemies[i]))
+                    {
+                        enemylifeBars[i].width -= 10;
+                    }
+                    // Rendering each enemy box
+                    if (enemylifeBars[i].width > 0)
+                    {
+                        DrawTexture(cloroquina, enemies[i].x - (enemies[i].width * 0.8), enemies[i].y - 10, WHITE);
+                        DrawRectangleRec(enemylifeBars[i], GREEN);
+                    }
+                    else
+                    {
+                        enemies[i].x = 9999999;
+                        enemies[i].y = 9999999;
+                    }
 
-                // Enemy Dinamic
-                if (distanceToEnemy(player1.x, player1.y, enemies[i].x, enemies[i].y) <= 600)
-                {
-                    enemyDinamic(player1, &enemies[i], enemySpeed, &playerlifeBar.width);
+                    // Enemy Dinamic
+                    if (distanceToEnemy(player1.x, player1.y, enemies[i].x, enemies[i].y) <= 600)
+                    {
+                        enemyDinamic(player1, &enemies[i], enemySpeed, &pLife);
+                    }
+                    enemylifeBars[i].x = enemies[i].x;
+                    enemylifeBars[i].y = enemies[i].y - 10;
                 }
-                enemylifeBars[i].x = enemies[i].x;
-                enemylifeBars[i].y = enemies[i].y - 10;
+            }
+            else if (bossPhase)
+            {
+                // TODO Bosses
             }
 
             // Combat mechanics
@@ -345,12 +442,42 @@ int main()
                 weaponLeft.y = player1.y + (player1.height / 2);
             }
 
+            if (!phaseAnnouncement)
+            {
+                // Showcasing Life Bar
+                lifeBarPosX = camera.target.x - (2 * camera.offset.x);
+                lifeBarPosY = camera.target.y - (2 * camera.offset.y);
+
+                DrawTextureEx(playerLifeBar, (Vector2){.x = lifeBarPosX, .y = lifeBarPosY}, 0, 2, WHITE);
+                DrawRectangle(lifeBarPosX + 181, lifeBarPosY + 75, pLife, 31, GREEN);
+
+                // Showcasing Score
+                sprintf(scoreText, "SCORE: %d", score);
+                DrawText(scoreText, lifeBarPosX + 30, lifeBarPosY + playerLifeBar.height + 50, 50, WHITE);
+            }
+
+            score = 0;
             EndMode2D();
             EndDrawing();
-            score = 0;
         }
     }
 
+    // Descarregando texturas movimentos
+    for (int i = 0; i < 4; ++i)
+    {
+        UnloadTexture(movesHorizontal[0][i]);
+        UnloadTexture(movesHorizontal[1][i]);
+
+        if (i < 3)
+        {
+            UnloadTexture(movesVertical[0][i]);
+            UnloadTexture(movesVertical[1][i]);
+        }
+    }
+
+    UnloadSound(audioBozo);
+
+    CloseAudioDevice();
     CloseWindow();
     free(enemies);
     free(enemylifeBars);

@@ -12,18 +12,19 @@ float distanceToEnemy(float pX, float pY, float eX, float eY)
 }
 
 // Menu Utilities
-char GameTitle[31] = "ANTI BOZO PATROL\n";
+char GameTitle[80] = "              CUCABELUDO EM:\n LUTA CONTRA O CAPITÃO BOSTÃONARO\n";
 char GameCredits[51] = "Created by computer engeneering students at UFPE ©";
-void renderMenu(Vector2 *mouse, int screenWidth, int screenHeight, Rectangle menuOptions[2], int *menuMode, int *closeGame)
+void renderMenu(Texture2D MenuCape, Vector2 *mouse, int screenWidth, int screenHeight, Rectangle menuOptions[2], int *menuMode, int *closeGame)
 {
     *mouse = GetMousePosition();
 
     BeginDrawing();
 
     ClearBackground(WHITE);
+    DrawTextureEx(MenuCape, (Vector2){.x = 0, .y = 0}, 0, 1, WHITE);
 
-    DrawText(GameTitle, (screenWidth / 2) - (MeasureText(GameTitle, 70) / 2), 300, 70, BLUE);
-    DrawText(GameCredits, screenWidth / 2 - (MeasureText(GameTitle, 70) / 2.5), screenHeight - 40, 20, BLACK);
+    DrawText(GameTitle, (screenWidth / 2) - (MeasureText(GameTitle, 50) / 2), 300, 50, WHITE);
+    DrawText(GameCredits, screenWidth / 2 - (MeasureText(GameTitle, 20) / 1.5), screenHeight - 40, 20, WHITE);
 
     if (CheckCollisionPointRec(*mouse, menuOptions[0]))
         DrawRectangleRec(menuOptions[0], GREEN);
@@ -55,7 +56,7 @@ void renderMenu(Vector2 *mouse, int screenWidth, int screenHeight, Rectangle men
 }
 
 // Enemy Utilities
-void enemyDinamic(Rectangle player, Rectangle *enemy, int speed, float *playerLifeBar)
+void enemyDinamic(Rectangle player, Rectangle *enemy, int speed, float *playerLife)
 {
 
     if (player.x - enemy->x > 0)
@@ -78,29 +79,25 @@ void enemyDinamic(Rectangle player, Rectangle *enemy, int speed, float *playerLi
 
     if (CheckCollisionRecs(player, *enemy) && enemy->x >= player.x && enemy->y >= player.y)
     {
-        printf("COLIDIU\n");
-        *playerLifeBar -= 10;
+        *playerLife -= 10;
         enemy->x += 150;
         enemy->y += 150;
     }
     if (CheckCollisionRecs(player, *enemy) && enemy->x <= player.x && enemy->y >= player.y)
     {
-        printf("COLIDIU\n");
-        *playerLifeBar -= 10;
+        *playerLife -= 10;
         enemy->x -= 150;
         enemy->y += 150;
     }
     if (CheckCollisionRecs(player, *enemy) && enemy->x >= player.x && enemy->y <= player.y)
     {
-        printf("COLIDIU\n");
-        *playerLifeBar -= 10;
+        *playerLife -= 10;
         enemy->x += 150;
         enemy->y -= 150;
     }
     if (CheckCollisionRecs(player, *enemy) && enemy->x <= player.x && enemy->y <= player.y)
     {
-        printf("COLIDIU\n");
-        *playerLifeBar -= 10;
+        *playerLife -= 10;
         enemy->x -= 150;
         enemy->y -= 150;
     }

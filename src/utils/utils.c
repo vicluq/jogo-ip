@@ -14,7 +14,7 @@ float distanceToEnemy(float pX, float pY, float eX, float eY)
 // Menu Utilities
 char GameTitle[80] = "              CUCABELUDO EM:\n LUTA CONTRA O CAPITÃO BOSTÃONARO\n";
 char GameCredits[51] = "Created by computer engeneering students at UFPE ©";
-void renderMenu(Texture2D MenuCape, Vector2 *mouse, int screenWidth, int screenHeight, Rectangle menuOptions[2], int *menuMode, int *closeGame)
+void renderMenu(Texture2D MenuCape, Vector2 *mouse, int screenWidth, int screenHeight, Rectangle menuOptions[2], int *menuMode, int *introMode, double *introStart, int *closeGame)
 {
     *mouse = GetMousePosition();
 
@@ -45,6 +45,8 @@ void renderMenu(Texture2D MenuCape, Vector2 *mouse, int screenWidth, int screenH
     if (CheckCollisionPointRec(*mouse, menuOptions[0]) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
     {
         *menuMode = 0;
+        *introMode = 1;
+        *introStart = GetTime();
     }
 
     if (CheckCollisionPointRec(*mouse, menuOptions[1]) && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))

@@ -15,13 +15,14 @@ int main()
     }
 
     // Tempo Related
-    double gameTime = 0, gameOverTime = 0;
+    double PROCESS_TIME = 0, gameTime = 0, introStart = 0, gameOverTime = 0;
+    char timeCounter[20];
 
     // Telas e controles de transição
-    int menuMode = 1, closeGame = 0, gameOverMode = 0;
+    int menuMode = 1, closeGame = 0, introMode = 0, gameOverMode = 0;
     int bossPhase = 0, phaseAnnouncement = 0, cloroquinaPhase = 1;
     double phaseTransitionTime = 0;
-    char transitionText[] = "BOSTÃONARO FOI DERROTADO";
+    char transitionText[] = "PREPARE-SE PARA A BATALHA FINAL\nDERROTE O BOSTÃO E OS BOSTINHAS";
 
     // Sounds
     Sound audioBozo = LoadSound("./assets/bozo-pal.wav");
@@ -75,7 +76,7 @@ int main()
         movesVertical[1][j - 1] = LoadTexture(filename);
     }
 
-    Rectangle player1 = {0, 0, movesHorizontal[1][1].width / 2, movesHorizontal[1][1].height / 1.7};
+    Rectangle player1 = {0, 0, movesHorizontal[1][1].width / 2.0f, movesHorizontal[1][1].height / 1.7f};
     int score = 0;
     char scoreText[50];
     const float playerSpeed = 15;
@@ -110,11 +111,22 @@ int main()
     // Ciclo do jogo
     while (!WindowShouldClose() && !closeGame)
     {
+        PROCESS_TIME = GetTime();
         if (menuMode)
         {
-            renderMenu(menuCape, &mouse, screenWidth, screenHeight, menuOptions, &menuMode, &closeGame);
+            renderMenu(menuCape, &mouse, screenWidth, screenHeight, menuOptions, &menuMode, &introMode, &introStart, &closeGame);
         }
+        else if (introMode && PROCESS_TIME - introStart <= 15)
+        {
+            // Animar Star Wars Like Intro
+            BeginDrawing();
+            ClearBackground(BLACK);
 
+            sprintf(timeCounter, "%lf", (PROCESS_TIME - introStart));
+            DrawText(timeCounter, (screenWidth / 2.0f) - 50, screenHeight / 2.0f, 50, YELLOW);
+
+            EndDrawing();
+        }
         else
         {
             gameTime = GetTime();
@@ -182,25 +194,6 @@ int main()
                 DrawText(transitionText, (screenWidth / 2) - (MeasureText(transitionText, 70) / 2), (screenHeight / 2) - 50, 70, RED);
             }
 
-            // Mecânica de vida do player e GameOver -> Nova branch
-            if (pLife <= 0)
-            {
-                if (isAlive)
-                {
-                    gameOverTime = GetTime();
-                    isAlive = 0;
-                }
-
-                if (!isAlive && (gameTime - gameOverTime) <= 5)
-                {
-                    DrawText("  SE FUDEEEU\nCLOROQUINADO", (screenWidth / 2) - 800, (screenHeight / 2) - 280, 200, RED);
-                }
-                else
-                {
-                    gameOverMode = 1;
-                }
-            }
-
             // Modo 2D
             BeginMode2D(camera);
 
@@ -214,7 +207,7 @@ int main()
                 DrawTextureEx(BossMap, (Vector2){.x = -2 * camera.offset.x, .y = -2 * camera.offset.y}, 0, 3, WHITE);
             }
 
-            // Rendering Player
+            // Rendering Player - Exceto na phase announcemnt
             if (!phaseAnnouncement)
             {
                 if (pLife > 0)
@@ -441,6 +434,26 @@ int main()
                 weaponLeft.y = player1.y + (player1.height / 2);
             }
 
+            // Mecânica de vida do player e GameOver -> Nova branch
+            if (pLife <= 0)
+            {
+                if (isAlive)
+                {
+                    gameOverTime = GetTime();
+                    isAlive = 0;
+                }
+
+                if (!isAlive && (gameTime - gameOverTime) <= 5)
+                {
+                    DrawText("  SE FUDEEEU\nCLOROQUINADO!!!", camera.target.x - 800, camera.target.y - 100, 200, RED);
+                }
+                else
+                {
+                    gameOverMode = 1;
+                }
+            }
+
+            // Exibindo barra de vida e score - Exceto na phase announcement
             if (!phaseAnnouncement)
             {
                 // Showcasing Life Bar

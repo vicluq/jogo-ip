@@ -169,7 +169,6 @@ int main()
             }
             else if (score >= enemyAmount && gameTime - phaseTransitionTime > 33 && bossPhase == 0)
             {
-                printf("FIM TRANSIÇÃO\n");
                 phaseAnnouncement = 0;
                 bossPhase = 1;
             }

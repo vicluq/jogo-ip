@@ -9,6 +9,9 @@ int main()
     InitWindow(0, 0, "Game");
     InitAudioDevice();
 
+    const int screenWidth = GetScreenWidth(), screenHeight = GetScreenHeight();
+    SetTargetFPS(60);
+
     if (!IsWindowFullscreen())
     {
         ToggleFullscreen();
@@ -21,15 +24,15 @@ int main()
     // Telas e controles de transição
     int menuMode = 1, closeGame = 0, introMode = 0, gameOverMode = 0;
     int bossPhase = 0, phaseAnnouncement = 0, cloroquinaPhase = 1;
+
     double phaseTransitionTime = 0;
-    char transitionText[] = "PREPARE-SE PARA A BATALHA FINAL\nDERROTE O BOSTÃO E OS BOSTINHAS";
+    char phaseTransitionText[] = "PREPARE-SE PARA A BATALHA FINAL\nDERROTE O BOSTÃO E OS BOSTINHAS";
+
+    Vector2 introTextPosition = {.x = (screenWidth / 2) - (MeasureText(introText, 40) / 2.2), .y = (screenHeight / 2) - (20 * 4)};
 
     // Sounds
     Sound audioBozo = LoadSound("./assets/bozo-pal.wav");
     SetMasterVolume(0.5f);
-
-    const int screenWidth = GetScreenWidth(), screenHeight = GetScreenHeight();
-    SetTargetFPS(60);
 
     // Mouse
     Vector2 mouse = {.x = 0, .y = 0};
@@ -116,14 +119,27 @@ int main()
         {
             renderMenu(menuCape, &mouse, screenWidth, screenHeight, menuOptions, &menuMode, &introMode, &introStart, &closeGame);
         }
-        else if (introMode && PROCESS_TIME - introStart <= 15)
+        else if (introMode && !menuMode)
         {
             // Animar Star Wars Like Intro
             BeginDrawing();
             ClearBackground(BLACK);
 
-            sprintf(timeCounter, "%lf", (PROCESS_TIME - introStart));
-            DrawText(timeCounter, (screenWidth / 2.0f) - 50, screenHeight / 2.0f, 50, YELLOW);
+            // sprintf(timeCounter, "%lf", (PROCESS_TIME - introStart));
+            // DrawText(timeCounter, (screenWidth / 2.0f) - 50, screenHeight / 2.0f, 50, YELLOW);]
+            if (introTextPosition.y >= -40 * 5)
+            {
+                DrawText(introText, introTextPosition.x, introTextPosition.y, 40, YELLOW);
+                introTextPosition.y -= 0.5;
+            }
+            else
+            {
+                DrawText(instructions, (screenWidth / 2) - (MeasureText(instructions, 40) / 2), screenHeight / 2, 40, YELLOW);
+                DrawText("Aperte [Enter] para continuar", (screenWidth / 2) - (MeasureText("Aperte [Enter] para continuar", 40) / 2), (screenHeight / 2) + 50, 40, RED);
+            }
+
+            if (IsKeyPressed(KEY_ENTER))
+                introMode = 0;
 
             EndDrawing();
         }
@@ -171,13 +187,13 @@ int main()
                 }
             }
 
-            // Tela Transição
+            // Tela Transição entre fase cloroquina e boss
             if (score >= enemyAmount && phaseAnnouncement == 0 && bossPhase == 0)
             {
                 phaseTransitionTime = GetTime();
                 cloroquinaPhase = 0;
                 phaseAnnouncement = 1;
-                PlaySound(audioBozo);
+                PlaySound(audioBozo); // Renderizar na tela de vitória
             }
             else if (score >= enemyAmount && gameTime - phaseTransitionTime > 33 && bossPhase == 0)
             {
@@ -191,7 +207,7 @@ int main()
 
             if (phaseAnnouncement)
             {
-                DrawText(transitionText, (screenWidth / 2) - (MeasureText(transitionText, 70) / 2), (screenHeight / 2) - 50, 70, RED);
+                DrawText(phaseTransitionText, (screenWidth / 2) - (MeasureText(phaseTransitionText, 70) / 2), (screenHeight / 2) - 50, 70, RED);
             }
 
             // Modo 2D

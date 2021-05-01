@@ -3,3 +3,5 @@ void renderMenu(Texture2D MenuCape, Vector2 *mouse, int screenWidth, int screenH
 void enemyDinamic(Rectangle player, Rectangle *enemy, int speed, float *playerLifeBar);
 void renderEnemies(float playerH, float playerW, float pX, float pY, Rectangle *enemies, int enemyAmount);
 void renderEnemyLifeBar(Rectangle *enemies, Rectangle *lifebars, int enemyAmount);
+char introText[400];
+char instructions[90];

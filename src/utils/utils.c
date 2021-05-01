@@ -57,6 +57,10 @@ void renderMenu(Texture2D MenuCape, Vector2 *mouse, int screenWidth, int screenH
     EndDrawing();
 }
 
+// Intro Elements
+char introText[400] = "Ao voltar do exílio, Lula Bombado encontra um Brasil devastado\ne comandado pelo ditador Capitão Bostonaro e seu exército de cloroquinas.\nAbalado, ele deseja salvar o país com o poder da vacina e derrotar\no tirano opressor, para isso, Lula invade o covil maligno\nde Bostonaro para derrotá-lo.";
+char instructions[90] = "Use [W] [A] [S] [D] para se mover e [J] [K] para atacar";
+
 // Enemy Utilities
 void enemyDinamic(Rectangle player, Rectangle *enemy, int speed, float *playerLife)
 {

@@ -14,6 +14,7 @@ float distanceToEnemy(float pX, float pY, float eX, float eY)
 // Menu Utilities
 char GameTitle[80] = "              CUCABELUDO EM:\n LUTA CONTRA O CAPITÃO BOSTÃONARO\n";
 char GameCredits[51] = "Created by computer engeneering students at UFPE ©";
+
 void renderMenu(Texture2D MenuCape, Vector2 *mouse, int screenWidth, int screenHeight, Rectangle menuOptions[2], int *menuMode, int *introMode, double *introStart, int *closeGame)
 {
     *mouse = GetMousePosition();
@@ -21,10 +22,13 @@ void renderMenu(Texture2D MenuCape, Vector2 *mouse, int screenWidth, int screenH
     BeginDrawing();
 
     ClearBackground(WHITE);
+
+    MenuCape.width = screenWidth;
+    MenuCape.height = screenHeight;
     DrawTextureEx(MenuCape, (Vector2){.x = 0, .y = 0}, 0, 1, WHITE);
 
     DrawText(GameTitle, (screenWidth / 2) - (MeasureText(GameTitle, 50) / 2), 300, 50, WHITE);
-    DrawText(GameCredits, screenWidth / 2 - (MeasureText(GameTitle, 20) / 1.5), screenHeight - 40, 20, WHITE);
+    DrawText(GameCredits, screenWidth / 2 - (MeasureText(GameTitle, 20) / 1.5), screenHeight - 80, 20, WHITE);
 
     if (CheckCollisionPointRec(*mouse, menuOptions[0]))
         DrawRectangleRec(menuOptions[0], GREEN);
@@ -62,7 +66,29 @@ char introText[400] = "Ao voltar do exílio, Lula Bombado encontra um Brasil dev
 char instructions[90] = "Use [W] [A] [S] [D] para se mover e [J] [K] para atacar";
 
 // Enemy Utilities
-void enemyDinamic(Rectangle player, Rectangle *enemy, int speed, float *playerLife)
+Vector2 enemiesPositions[20] = {
+    {.x = 100, .y = 40},  // 1
+    {.x = 1305, .y = 636},  // 2
+    {.x = 530, .y = 1213},  // 3
+    {.x = 1600, .y = 1920}, // 4
+    {.x = 960, .y = 3000},  // 5
+    {.x = 2770, .y = 3100}, // 6
+    {.x = 4100, .y = 3060}, // 7
+    {.x = 3400, .y = 950},  // 8
+    {.x = 4400, .y = 875},  // 9
+    {.x = 5290, .y = 2814}, // 10
+    {.x = 5678, .y = 570},  // 11
+    {.x = 6500, .y = 1300}, // 12
+    {.x = 6700, .y = 2700}, // 13
+    {.x = 5560, .y = 3375}, // 14
+    {.x = 7520, .y = 2344}, // 15
+    {.x = 7130, .y = 620},  // 16
+    {.x = 2270, .y = 770},  // 17
+    {.x = 6280, .y = 3360}, // 18
+    {.x = 7484, .y = 2979}, // 19
+    {.x = 3095, .y = 1931}, // 20
+};
+void enemyDynamic(Rectangle player, Rectangle *enemy, int speed, float *playerLife)
 {
 
     if (player.x - enemy->x > 0)
@@ -116,8 +142,8 @@ void renderEnemies(float playerH, float playerW, float pX, float pY, Rectangle *
         enemies[i].height = playerH / 1.7;
         enemies[i].width = playerW / 2;
 
-        enemies[i].x = (i + (pX * 2) + 1) * 100;
-        enemies[i].y = (i + (pY * 2) + 1) + (i * enemies[i].x);
+        enemies[i].x = enemiesPositions[i].x;
+        enemies[i].y = enemiesPositions[i].y;
     }
 }
 

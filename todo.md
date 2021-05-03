@@ -7,7 +7,7 @@
   - Expressões
 - ver o que pode transformar em função
 
-## Para o Jogo (hoje)
+## Para o Jogo
 
 [x] Fazer a intro
 [x] Mapa - Definir Limites (falta cloquina phase)
@@ -18,12 +18,14 @@
 [x] Novo Mapa
 
 - Amanhã
-  [ ] tiros com vacina
-  [ ] Mecânica do Bozo
+  [x] tiros com vacina
+  [x] Mecânica do Bozo
   [ ] Musicas
+  [ ] arminha corpo a corpo
 
 ## Se der tempo (amanhã)
 
 [x] Animação da intro (se der tempo)
 [ ] Proporções para diferentes telas - menu
 [ ] Ranking
+

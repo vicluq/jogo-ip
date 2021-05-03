@@ -31,7 +31,6 @@ int main()
     Texture2D vaccineTexture = LoadTexture("./assets/weapons/vac_hud.png");
 
     // Tempo Related
-    Sound bossSound = LoadSound("./assets/got-audio.wav");
     int playingSound = 1;
     SetMasterVolume(0.5f);
     double PROCESS_TIME = 0, gameTime = 0, introStart = 0, gameOverTime = 0, gameInitTime = 0;
@@ -50,6 +49,7 @@ int main()
     Sound audioBozo = LoadSound("./assets/bozo-pal.wav");
     Sound bozoLaugh = LoadSound("./assets/bozo-laugh.wav");
     Sound cloroquinaSound = LoadSound("./assets/dramatic.wav");
+    Sound bossSound = LoadSound("./assets/got-audio.wav");
 
     // Mouse
     Vector2 mouse = {.x = 0, .y = 0};
@@ -927,6 +927,8 @@ int main()
         UnloadTexture(movesHorizontal[0][i]);
         UnloadTexture(movesHorizontal[1][i]);
 
+        UnloadTexture(bossesTexture[i]);
+
         if (i < 3)
         {
             UnloadTexture(movesVertical[0][i]);
@@ -934,8 +936,24 @@ int main()
         }
     }
 
+    UnloadTexture(menuCape);
+    UnloadTexture(EnemyMap);
+    UnloadTexture(BossMap);
+    UnloadTexture(WinMap);
+    UnloadTexture(LoseMap);
+    UnloadTexture(FireCircle);
+    UnloadTexture(playerLifeBar);
+    UnloadTexture(GunLeft);
+    UnloadTexture(GunRight);
+    UnloadTexture(vacLeft);
+    UnloadTexture(vacRight);
+    UnloadTexture(cloroquina);
+    UnloadTexture(BolsonaroBoss);
+
     UnloadSound(openingSW);
     UnloadSound(audioBozo);
+    UnloadSound(bossSound);
+    UnloadSound(cloroquinaSound);
 
     CloseAudioDevice();
     CloseWindow();

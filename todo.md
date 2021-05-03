@@ -1,12 +1,5 @@
 # O que falta
 
-## Refatorações
-
-- Armazenar conteudo constante em variáveis
-  - Coordenadas do mapa
-  - Expressões
-- ver o que pode transformar em função
-
 ## Para o Jogo
 
 [x] Fazer a intro
@@ -20,12 +13,11 @@
 - Amanhã
   [x] tiros com vacina
   [x] Mecânica do Bozo
-  [ ] Musicas
-  [ ] arminha corpo a corpo
+  [x] Musicas
+  [x] arminha corpo a corpo
 
 ## Se der tempo (amanhã)
 
 [x] Animação da intro (se der tempo)
 [ ] Proporções para diferentes telas - menu
 [ ] Ranking
-

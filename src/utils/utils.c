@@ -27,8 +27,8 @@ void renderMenu(Texture2D MenuCape, Vector2 *mouse, int screenWidth, int screenH
     MenuCape.height = screenHeight;
     DrawTextureEx(MenuCape, (Vector2){.x = 0, .y = 0}, 0, 1, WHITE);
 
-    DrawText(GameTitle, (screenWidth / 2) - (MeasureText(GameTitle, 50) / 2), 300, 50, WHITE);
-    DrawText(GameCredits, screenWidth / 2 - (MeasureText(GameTitle, 20) / 1.5), screenHeight - 80, 20, WHITE);
+    DrawText(GameTitle, (screenWidth / 2) - (MeasureText(GameTitle, 50) / 2), screenHeight / 4, 50, WHITE);
+    DrawText(GameCredits, (screenWidth / 2) - (MeasureText(GameTitle, 20) / 1.5), screenHeight - 80, 20, WHITE);
 
     if (CheckCollisionPointRec(*mouse, menuOptions[0]))
         DrawRectangleRec(menuOptions[0], GREEN);
@@ -40,8 +40,8 @@ void renderMenu(Texture2D MenuCape, Vector2 *mouse, int screenWidth, int screenH
     else
         DrawRectangleRec(menuOptions[1], BLUE);
 
-    DrawText("Start", menuOptions[0].x + (MeasureText("Start", 70) / 2), menuOptions[0].y + (menuOptions[0].height / 4.2), 70, BLACK);
-    DrawText("Close", menuOptions[1].x + (MeasureText("Close", 70) / 2), menuOptions[1].y + (menuOptions[1].height / 4.2), 70, BLACK);
+    DrawText("Start", menuOptions[0].x + (MeasureText("Start", screenWidth / 30) / 2), menuOptions[0].y + (menuOptions[0].height / 4.2), screenWidth / 30, BLACK);
+    DrawText("Close", menuOptions[1].x + (MeasureText("Close", screenWidth / 30) / 2), menuOptions[1].y + (menuOptions[1].height / 4.2), screenWidth / 30, BLACK);
 
     // Mouse
     DrawCircleV(*mouse, 10, GREEN);
@@ -63,7 +63,7 @@ void renderMenu(Texture2D MenuCape, Vector2 *mouse, int screenWidth, int screenH
 
 // Intro Elements
 char introText[400] = "Ao voltar do exílio, Lula Bombado encontra um Brasil devastado\ne comandado pelo ditador Capitão Bostonaro e seu exército de cloroquinas.\nAbalado, ele deseja salvar o país com o poder da vacina e derrotar\no tirano opressor, para isso, Lula invade o covil maligno\nde Bostonaro para derrotá-lo.";
-char instructions[90] = "Use [W] [A] [S] [D] para se mover e [J] [K] para atacar";
+char instructions[90] = "Use [W] [A] [S] [D] para se mover e [J] [K] [M] [N] para atacar";
 
 // Enemy Utilities
 Vector2 enemiesPositions[20] = {

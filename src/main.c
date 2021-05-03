@@ -1,5 +1,6 @@
 #include <raylib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include "./utils/utils.h"
 
@@ -27,10 +28,13 @@ int main()
 
     // HUD
     char timerDisplay[40], scoreText[25], vacAvaliableText[15];
+    Texture2D vaccineTexture = LoadTexture("./assets/weapons/vac_hud.png");
 
     // Tempo Related
-    double PROCESS_TIME = 0, gameTime = 0, introStart = 0, gameWinTime = 0, gameOverTime = 0, gameInitTime = 0;
-    char timeCounter[20];
+    Sound bossSound = LoadSound("./assets/got-audio.wav");
+    int playingSound = 1;
+    SetMasterVolume(0.5f);
+    double PROCESS_TIME = 0, gameTime = 0, introStart = 0, gameOverTime = 0, gameInitTime = 0;
 
     // Telas e controles de transição
     int menuMode = 1, closeGame = 0, introMode = 0, winMode = 0;
@@ -45,18 +49,16 @@ int main()
     Sound openingSW = LoadSound("./assets/sw-opening.wav");
     Sound audioBozo = LoadSound("./assets/bozo-pal.wav");
     Sound bozoLaugh = LoadSound("./assets/bozo-laugh.wav");
-    int playingSound = 1;
-    SetMasterVolume(0.5f);
+    Sound cloroquinaSound = LoadSound("./assets/dramatic.wav");
 
     // Mouse
     Vector2 mouse = {.x = 0, .y = 0};
 
     // Menu Elements
-    char menuOptionsText[2][10] = {"Start", "Close"};
     Texture2D menuCape = LoadTexture("./assets/menu.png");
     Rectangle menuOptions[2] = {
-        {.height = 100, .width = 400, .x = (screenWidth / 2) - 200, .y = 500},
-        {.height = 100, .width = 400, .x = (screenWidth / 2) - 200, .y = 500 + (1.5 * menuOptions[0].height)},
+        {.height = screenHeight / 10, .width = screenWidth / 4.8, .x = (screenWidth / 2) - 200, .y = (screenHeight / 2) - 50},
+        {.height = screenHeight / 10, .width = screenWidth / 4.8, .x = (screenWidth / 2) - 200, .y = menuOptions[0].y + (1.5 * menuOptions[0].height)},
     };
 
     // Map
@@ -100,7 +102,7 @@ int main()
     Rectangle player1 = {4045, 1720, movesHorizontal[1][1].width / 2.0f, movesHorizontal[1][1].height / 1.7f};
     int score = 0;
     const float playerSpeed = 15;
-    float previousX = 0, previousY = 0, animationTime = 0.0f, pLife = 800;
+    float previousX = 0, previousY = 0, animationTime = 0.0f, pLife = 795;
 
     // Player Life
     int isAlive = 1;
@@ -108,10 +110,12 @@ int main()
     float lifeBarPosX = 0, lifeBarPosY = 0;
 
     // Player Weapons
+    Texture2D GunLeft = LoadTexture("./assets/weapons/vac_L.png");
+    Texture2D GunRight = LoadTexture("./assets/weapons/vac_D.png");
     Rectangle weaponRight = {player1.x, player1.y, 0, 0};
     Rectangle weaponLeft = {player1.x, player1.y, 0, 0};
-    int shootingVac = 0, vacCollided = 0;
 
+    int shootingVac = 0, vacCollided = 0;
     const int vaccineAmount = 10;
     int vaccinesAvaliable = vaccineAmount;
     Texture2D vacLeft = LoadTexture("./assets/weapons/vac_L.png");
@@ -130,7 +134,7 @@ int main()
 
     // Enemies
     const int enemySpeed = 15, enemyAmount = 4;
-    Texture cloroquina = LoadTexture("./assets/Cloroquina/cloroquina2-removebg-preview.png");
+    Texture cloroquina = LoadTexture("./assets/Cloroquina/cloroquina-enemy.png");
     Rectangle *enemies = (Rectangle *)malloc(sizeof(Rectangle) * enemyAmount);
     Rectangle *enemylifeBars = (Rectangle *)malloc(sizeof(Rectangle) * enemyAmount);
 
@@ -169,7 +173,6 @@ int main()
     Texture2D BolsonaroBoss = LoadTexture("./assets/Bolsonaros/boss-main.png");
     Rectangle BolsonaroRec = {.x = 2700, .y = 1750, .width = BolsonaroBoss.width, .height = BolsonaroBoss.height};
     Rectangle BolsonaroLifeBar = {.x = BolsonaroRec.x, .y = BolsonaroRec.y + 20, .width = BolsonaroBoss.width * 1, .height = 20};
-    float fireCircleRadius = distanceToEnemy(1536 * 1.8, 1088 * 1.8, 1536 * 1.8, 608 * 1.8);
 
     // Ciclo do jogos
     while (!WindowShouldClose() && !closeGame)
@@ -218,8 +221,11 @@ int main()
 
             if (winMode == 1)
             {
+                StopSound(bossSound);
+
                 if (playingSound)
                 {
+                    printf("AUDIO BOZO TRISTE\n");
                     PlaySound(audioBozo);
                     playingSound = 0;
                 }
@@ -229,16 +235,29 @@ int main()
 
                 ClearBackground(BLACK);
                 DrawTextureEx(WinMap, (Vector2){.x = 0, .y = 0}, 0, 1, WHITE);
-                DrawText("VOCÊ DERROTOU O BOZO", (screenWidth / 2) - (MeasureText("VOCÊ DERROTOU O BOZO", 70) / 2), screenHeight / 2, 70, GREEN);
+                DrawText("VOCÊ DERROTOU O BOZO", (screenWidth / 2) - (MeasureText("VOCÊ DERROTOU O BOZO", screenWidth / 30) / 2), screenHeight / 2, screenWidth / 30, GREEN);
 
                 sprintf(timerDisplay, "você terminou a sua missão em %.2lfs", gameTime - gameInitTime);
-                DrawText(timerDisplay, (screenWidth / 2) - (MeasureText(timerDisplay, 50) / 2), (screenHeight / 2) + 80, 50, YELLOW);
+                DrawText(timerDisplay, (screenWidth / 2) - (MeasureText(timerDisplay, generalFontSize) / 2), (screenHeight / 2) + 80, generalFontSize, YELLOW);
             }
             else if (winMode == -1)
             {
+
+                if (cloroquinaPhase && !bossPhase)
+                {
+                    printf("BYE MUSICA DO CLOROQUINA VEM BOZO RINDO\n");
+                    StopSound(cloroquinaSound);
+                }
+                else
+                {
+                    printf("BYE MUSICA DO BOSS VEM BOZO RINDO\n");
+                    StopSound(bossSound);
+                }
+
                 if (playingSound)
                 {
-                    PlaySound(audioBozo);
+                    printf("BYE MUSICA DO BOSS VEM BOZO XINGANDO\n");
+                    PlaySound(bozoLaugh);
                     playingSound = 0;
                 }
 
@@ -247,7 +266,7 @@ int main()
 
                 ClearBackground(BLACK);
                 DrawTextureEx(LoseMap, (Vector2){.x = 0, .y = 0}, 0, 1, WHITE);
-                DrawText("VOCÊ PERDEU PARA O BOZO", (screenWidth / 2) - (MeasureText("VOCÊ PERDEU PARA O BOZO", 70) / 2), screenHeight / 2, 70, RED);
+                DrawText("VOCÊ PERDEU PARA O BOZO", (screenWidth / 2) - (MeasureText("VOCÊ PERDEU PARA O BOZO", 70) / 2), screenHeight / 2, screenWidth / 30, RED);
             }
 
             EndDrawing();
@@ -281,6 +300,11 @@ int main()
 
             if (score == enemyAmount + 5)
             {
+                if (!playingSound)
+                {
+                    playingSound = 1;
+                }
+                // Parando musica da fase anterior
                 winMode = 1;
             }
 
@@ -431,7 +455,7 @@ int main()
                 cloroquinaPhase = 0;
                 phaseAnnouncement = 1;
             }
-            else if (score >= enemyAmount && gameTime - phaseTransitionTime > 8 && bossPhase == 0)
+            else if (score >= enemyAmount && gameTime - phaseTransitionTime > 5 && bossPhase == 0)
             {
                 phaseAnnouncement = 0;
                 bossPhase = 1;
@@ -445,7 +469,13 @@ int main()
             // Tela anuncio de mudança de fase
             if (phaseAnnouncement)
             {
-                DrawText(phaseTransitionText, (screenWidth / 2) - (MeasureText(phaseTransitionText, 70) / 2), (screenHeight / 2) - 50, 70, RED);
+                if (!playingSound)
+                {
+                    StopSound(cloroquinaSound); // Setando para a proxima fase
+                    playingSound = 1;           // Parando musica da fase anterior
+                }
+
+                DrawText(phaseTransitionText, (screenWidth / 2) - (MeasureText(phaseTransitionText, screenWidth / 30) / 2), (screenHeight / 2) - 50, screenWidth / 30, RED);
             }
 
             // Modo 2D
@@ -454,10 +484,22 @@ int main()
             // Tela Mapa
             if (cloroquinaPhase)
             {
+                if (playingSound)
+                {
+                    PlaySound(cloroquinaSound);
+                    playingSound = 0;
+                }
+
                 DrawTextureEx(EnemyMap, (Vector2){.x = 0, .y = 0}, 0, 2, WHITE);
             }
-            else if (bossPhase)
+            else if (bossPhase && score < enemyAmount + 5)
             {
+                if (playingSound)
+                {
+                    PlaySound(bossSound);
+                    playingSound = 0;
+                }
+
                 DrawTextureEx(BossMap, (Vector2){.x = 0, .y = 0}, 0, 1.8, WHITE);
                 if (score < enemyAmount + 4)
                 {
@@ -668,7 +710,7 @@ int main()
                 }
                 if ((CheckCollisionRecs(weaponRight, BolsonaroRec) || CheckCollisionRecs(weaponLeft, BolsonaroRec)) && score == enemyAmount + 4)
                 {
-                    BolsonaroLifeBar.width -= 10;
+                    BolsonaroLifeBar.width -= 100;
                 }
                 if (CheckCollisionRecs(vaccines[vaccinesAvaliable - 1].weapon, BolsonaroRec) && score == enemyAmount + 4)
                 {
@@ -688,7 +730,7 @@ int main()
                 {
                     if (CheckCollisionRecs(weaponRight, bosses[i]) || CheckCollisionRecs(weaponLeft, bosses[i]))
                     {
-                        bossesLifeBars[i].width -= 15;
+                        bossesLifeBars[i].width -= 150;
                     }
                     if (CheckCollisionRecs(vaccines[vaccinesAvaliable - 1].weapon, bosses[i]))
                     {
@@ -733,6 +775,10 @@ int main()
                 }
                 else
                 {
+                    if (!playingSound)
+                    {
+                        playingSound = 1; // Parando musica da fase anterior
+                    }
                     winMode = -1;
                 }
             }
@@ -743,11 +789,11 @@ int main()
                 // Combat mechanics
                 if (IsKeyPressed(KEY_K))
                 {
-                    weaponRight.width = 60;
-                    weaponRight.height = 15;
+                    weaponRight.width = GunRight.width * 0.3;
+                    weaponRight.height = GunRight.height * 0.3;
                     weaponRight.x = player1.x + player1.width;
-                    weaponRight.y = player1.y + 2;
-                    DrawRectangleRec(weaponRight, GREEN);
+                    weaponRight.y = player1.y + (player1.height / 2);
+                    DrawTextureEx(GunRight, (Vector2){.x = weaponRight.x, .y = weaponRight.y}, 0, 0.3, WHITE);
                 }
                 else
                 {
@@ -759,11 +805,11 @@ int main()
 
                 if (IsKeyPressed(KEY_J))
                 {
-                    weaponLeft.width = 60;
-                    weaponLeft.height = 15;
+                    weaponLeft.width = GunLeft.width * 0.3;
+                    weaponLeft.height = GunLeft.height * 0.3;
                     weaponLeft.x = player1.x - weaponLeft.width;
-                    weaponLeft.y = player1.y + 2;
-                    DrawRectangleRec(weaponLeft, GREEN);
+                    weaponLeft.y = player1.y + (player1.height / 2);
+                    DrawTextureEx(GunLeft, (Vector2){.x = weaponLeft.x, .y = weaponLeft.y}, 0, 0.3, WHITE);
                 }
                 else
                 {
@@ -861,14 +907,12 @@ int main()
 
                 // Showcasing Vacs Avaliable
                 sprintf(vacAvaliableText, "x%d", vaccinesAvaliable);
-                DrawText(vacAvaliableText, lifeBarPosX + 100 + MeasureText(scoreText, 50), lifeBarPosY + playerLifeBar.height + 50, 50, WHITE);
+                DrawTextureEx(vaccineTexture, (Vector2){.x = lifeBarPosX + 100 + MeasureText(scoreText, 50), .y = lifeBarPosY + playerLifeBar.height + 50}, 0, 0.3, WHITE);
+                DrawText(vacAvaliableText, lifeBarPosX + 100 + MeasureText(scoreText, 50) + (vaccineTexture.width * 0.3), lifeBarPosY + playerLifeBar.height + 65, 50, WHITE);
 
                 // Showcasing Time Elapsed
                 sprintf(timerDisplay, "timer: %.2lf", gameTime - gameInitTime);
                 DrawText(timerDisplay, lifeBarPosX + 30, lifeBarPosY + playerLifeBar.height + 120, 50, WHITE);
-
-                sprintf(posText, "x = %f y = %f", player1.x, player1.y);
-                DrawText(posText, lifeBarPosX + 30, lifeBarPosY + playerLifeBar.height + 180, 50, WHITE);
             }
 
             score = 0;

@@ -921,7 +921,7 @@ int main()
         }
     }
 
-    // Descarregando texturas movimentos
+    // Descarregando texturas e sons
     for (int i = 0; i < 4; ++i)
     {
         UnloadTexture(movesHorizontal[0][i]);

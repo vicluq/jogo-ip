@@ -285,7 +285,7 @@ int main()
                 }
             }
 
-            for (int i = 0; i < enemyAmount; ++i)
+            for (int i = 0; i < 4; ++i)
             {
                 if (bossesLifeBars[i].width <= 0)
                 {

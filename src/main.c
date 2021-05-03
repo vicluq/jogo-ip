@@ -3,6 +3,12 @@
 #include <math.h>
 #include "./utils/utils.h"
 
+typedef struct
+{
+    float initialX, initialY;
+    Rectangle weapon;
+} LongDistWeapon;
+
 int main()
 {
     SetConfigFlags(FLAG_VSYNC_HINT);
@@ -19,12 +25,15 @@ int main()
     // General elements
     float generalFontSize = screenWidth / 50;
 
+    // HUD
+    char timerDisplay[40], scoreText[25], vacAvaliableText[15];
+
     // Tempo Related
     double PROCESS_TIME = 0, gameTime = 0, introStart = 0, gameWinTime = 0, gameOverTime = 0, gameInitTime = 0;
-    char timeCounter[20], timerDisplay[41];
+    char timeCounter[20];
 
     // Telas e controles de transição
-    int menuMode = 1, closeGame = 0, introMode = 0, gameOverMode = 0, winMode = 0;
+    int menuMode = 1, closeGame = 0, introMode = 0, winMode = 0;
     int bossPhase = 0, phaseAnnouncement = 0, cloroquinaPhase = 1;
 
     double phaseTransitionTime = 0;
@@ -35,6 +44,7 @@ int main()
     // Sounds
     Sound openingSW = LoadSound("./assets/sw-opening.wav");
     Sound audioBozo = LoadSound("./assets/bozo-pal.wav");
+    Sound bozoLaugh = LoadSound("./assets/bozo-laugh.wav");
     int playingSound = 1;
     SetMasterVolume(0.5f);
 
@@ -52,6 +62,9 @@ int main()
     // Map
     Texture2D EnemyMap = LoadTexture("./assets/cloroquina-map.png");
     Texture2D BossMap = LoadTexture("./assets/map-boss.png");
+    Texture2D WinMap = LoadTexture("./assets/HUD/LulaWin.png");
+    Texture2D LoseMap = LoadTexture("./assets/HUD/bozo-lose.png");
+    Texture2D FireCircle = LoadTexture("./assets/HUD/fire-map.png");
 
     // Camera
     Camera2D camera = {.offset = {screenWidth / 2.0f, screenHeight / 2.0f},
@@ -86,7 +99,6 @@ int main()
 
     Rectangle player1 = {4045, 1720, movesHorizontal[1][1].width / 2.0f, movesHorizontal[1][1].height / 1.7f};
     int score = 0;
-    char scoreText[50];
     const float playerSpeed = 15;
     float previousX = 0, previousY = 0, animationTime = 0.0f, pLife = 800;
 
@@ -98,6 +110,23 @@ int main()
     // Player Weapons
     Rectangle weaponRight = {player1.x, player1.y, 0, 0};
     Rectangle weaponLeft = {player1.x, player1.y, 0, 0};
+    int shootingVac = 0, vacCollided = 0;
+
+    const int vaccineAmount = 10;
+    int vaccinesAvaliable = vaccineAmount;
+    Texture2D vacLeft = LoadTexture("./assets/weapons/vac_L.png");
+    Texture2D vacRight = LoadTexture("./assets/weapons/vac_D.png");
+    LongDistWeapon vaccines[vaccineAmount];
+
+    for (int k = 0; k < vaccineAmount; ++k)
+    {
+        vaccines[k].initialX = 0;
+        vaccines[k].initialY = 0;
+        vaccines[k].weapon.height = 0;
+        vaccines[k].weapon.width = 0;
+        vaccines[k].weapon.x = player1.x;
+        vaccines[k].weapon.y = player1.y;
+    }
 
     // Enemies
     const int enemySpeed = 15, enemyAmount = 4;
@@ -138,13 +167,15 @@ int main()
 
     // Main Boss
     Texture2D BolsonaroBoss = LoadTexture("./assets/Bolsonaros/boss-main.png");
-    Rectangle BolsonaroRec = {.x = 2700, .y = 1750, .width = 489, .height = 559};
+    Rectangle BolsonaroRec = {.x = 2700, .y = 1750, .width = BolsonaroBoss.width, .height = BolsonaroBoss.height};
     Rectangle BolsonaroLifeBar = {.x = BolsonaroRec.x, .y = BolsonaroRec.y + 20, .width = BolsonaroBoss.width * 1, .height = 20};
+    float fireCircleRadius = distanceToEnemy(1536 * 1.8, 1088 * 1.8, 1536 * 1.8, 608 * 1.8);
 
-    // Ciclo do jogo
+    // Ciclo do jogos
     while (!WindowShouldClose() && !closeGame)
     {
         PROCESS_TIME = GetTime();
+
         if (menuMode)
         {
             renderMenu(menuCape, &mouse, screenWidth, screenHeight, menuOptions, &menuMode, &introMode, &introStart, &closeGame);
@@ -182,19 +213,42 @@ int main()
         }
         else if (winMode && !menuMode && !introMode)
         {
-            if (playingSound)
-            {
-                PlaySound(audioBozo);
-                playingSound = 0;
-            }
 
             BeginDrawing();
 
-            ClearBackground(BLACK);
-            DrawText("VOCÊ DERROTOU O BOZO", (screenWidth / 2) - (MeasureText("VOCÊ DERROTOU O BOZO", 50) / 2), screenHeight / 2, 50, GREEN);
+            if (winMode == 1)
+            {
+                if (playingSound)
+                {
+                    PlaySound(audioBozo);
+                    playingSound = 0;
+                }
 
-            sprintf(timerDisplay, "você terminou a sua missão em %.2lfs", gameTime - gameInitTime);
-            DrawText(timerDisplay, (screenWidth / 2) - (MeasureText(timerDisplay, 50) / 2), (screenHeight / 2) + 80, 50, YELLOW);
+                WinMap.width = screenWidth;
+                WinMap.height = screenHeight;
+
+                ClearBackground(BLACK);
+                DrawTextureEx(WinMap, (Vector2){.x = 0, .y = 0}, 0, 1, WHITE);
+                DrawText("VOCÊ DERROTOU O BOZO", (screenWidth / 2) - (MeasureText("VOCÊ DERROTOU O BOZO", 70) / 2), screenHeight / 2, 70, GREEN);
+
+                sprintf(timerDisplay, "você terminou a sua missão em %.2lfs", gameTime - gameInitTime);
+                DrawText(timerDisplay, (screenWidth / 2) - (MeasureText(timerDisplay, 50) / 2), (screenHeight / 2) + 80, 50, YELLOW);
+            }
+            else if (winMode == -1)
+            {
+                if (playingSound)
+                {
+                    PlaySound(audioBozo);
+                    playingSound = 0;
+                }
+
+                LoseMap.width = screenWidth;
+                LoseMap.height = screenHeight;
+
+                ClearBackground(BLACK);
+                DrawTextureEx(LoseMap, (Vector2){.x = 0, .y = 0}, 0, 1, WHITE);
+                DrawText("VOCÊ PERDEU PARA O BOZO", (screenWidth / 2) - (MeasureText("VOCÊ PERDEU PARA O BOZO", 70) / 2), screenHeight / 2, 70, RED);
+            }
 
             EndDrawing();
         }
@@ -202,94 +256,6 @@ int main()
         {
             gameTime = GetTime();
             StopSound(openingSW);
-
-            // Player Motion
-            previousY = player1.y;
-            previousX = player1.x;
-
-            if (setNewPhaseCoord)
-            {
-                player1.x = BossMap.width / 2;
-                player1.y = BossMap.height / 2;
-
-                camera.target.x = BossMap.width / 2;
-                camera.target.y = BossMap.height / 2;
-
-                setNewPhaseCoord = 0;
-            }
-
-            if (IsKeyPressed(KEY_W) || IsKeyDown(KEY_W))
-            {
-                if (bossPhase)
-                {
-                    if (player1.y - (playerSpeed * 0.55) >= 450)
-                    {
-                        player1.y -= playerSpeed * 0.55;
-                    }
-                }
-                else if (cloroquinaPhase && !bossPhase)
-                {
-                    if (player1.y - (playerSpeed * 0.55) >= -45)
-                    {
-                        player1.y -= playerSpeed * 0.55;
-                    }
-                }
-            }
-
-            if (IsKeyPressed(KEY_D) || IsKeyDown(KEY_D))
-            {
-                if (bossPhase)
-                {
-                    if (player1.x + (playerSpeed * 0.55) <= 5150)
-                    {
-                        player1.x += playerSpeed * 0.55;
-                    }
-                }
-                else if (player1.x + (playerSpeed * 0.55) <= 8020)
-                {
-                    player1.x += playerSpeed * 0.55;
-                }
-            }
-
-            if (IsKeyPressed(KEY_S) || IsKeyDown(KEY_S))
-            {
-                if (bossPhase)
-                {
-                    if (player1.y + (playerSpeed * 0.55) <= 3194)
-                    {
-                        player1.y += playerSpeed * 0.55;
-                    }
-                }
-                else if (cloroquinaPhase && !bossPhase)
-                {
-                    if (player1.y + (playerSpeed * 0.55) <= 3830)
-                    {
-                        player1.y += playerSpeed * 0.55;
-                    }
-                }
-            }
-
-            if (IsKeyPressed(KEY_A) || IsKeyDown(KEY_A))
-            {
-                if (bossPhase)
-                {
-                    if (player1.x - (playerSpeed * 0.55) >= 300)
-                    {
-                        player1.x -= playerSpeed * 0.55;
-                    }
-                }
-                else if (player1.x - (playerSpeed * 0.55) >= 80)
-                {
-                    player1.x -= playerSpeed * 0.55;
-                }
-            }
-
-            //  Camera
-            if ((previousY != player1.y) || (previousX != player1.x))
-            {
-                camera.target.x += ((player1.x) - camera.target.x) * 0.025;
-                camera.target.y += ((player1.y) - camera.target.y) * 0.025;
-            }
 
             // Checando Score
             for (int i = 0; i < enemyAmount; ++i)
@@ -318,6 +284,146 @@ int main()
                 winMode = 1;
             }
 
+            // Player Motion
+            previousY = player1.y;
+            previousX = player1.x;
+
+            if (setNewPhaseCoord)
+            {
+                player1.x = BossMap.width / 2;
+                player1.y = BossMap.height / 2;
+
+                camera.target.x = BossMap.width / 2;
+                camera.target.y = BossMap.height / 2;
+
+                vaccinesAvaliable = vaccineAmount;
+
+                setNewPhaseCoord = 0;
+            }
+
+            if (IsKeyPressed(KEY_W) || IsKeyDown(KEY_W))
+            {
+                if (bossPhase)
+                {
+                    if (player1.y - (playerSpeed * 0.55) >= 450)
+                    {
+                        if (score < enemyAmount + 4)
+                        {
+                            if (!(player1.y - (playerSpeed * 0.55) <= 2390 && player1.y - (playerSpeed * 0.55) >= 1185 && player1.x >= 2120 && player1.x <= 3330))
+                            {
+                                player1.y -= playerSpeed * 0.55;
+                            }
+                        }
+                        else
+                        {
+
+                            player1.y -= playerSpeed * 0.55;
+                        }
+                    }
+                }
+                else if (cloroquinaPhase && !bossPhase)
+                {
+                    if (player1.y - (playerSpeed * 0.55) >= -45)
+                    {
+                        player1.y -= playerSpeed * 0.55;
+                    }
+                }
+            }
+
+            if (IsKeyPressed(KEY_D) || IsKeyDown(KEY_D))
+            {
+                if (bossPhase)
+                {
+                    if (player1.x + (playerSpeed * 0.55) <= 5150)
+                    {
+                        if (score < enemyAmount + 4)
+                        {
+                            if (!(player1.x + (playerSpeed * 0.55) > 2120 && player1.x + (playerSpeed * 0.55) < 3330 && player1.y >= 1200 && player1.y <= 2390))
+                            {
+                                player1.x += playerSpeed * 0.55;
+                            }
+                        }
+                        else
+                        {
+
+                            player1.x += playerSpeed * 0.55;
+                        }
+                    }
+                }
+                else if (cloroquinaPhase && !bossPhase)
+                {
+
+                    if (player1.x + (playerSpeed * 0.55) <= 8020)
+                    {
+                        player1.x += playerSpeed * 0.55;
+                    }
+                }
+            }
+
+            if (IsKeyPressed(KEY_S) || IsKeyDown(KEY_S))
+            {
+                if (bossPhase)
+                {
+                    if (player1.y + (playerSpeed * 0.55) <= 3194)
+                    {
+                        if (score < enemyAmount + 4)
+                        {
+                            if (!(player1.y + (playerSpeed * 0.55) >= 1185 && player1.y + (playerSpeed * 0.55) <= 2390 && player1.x >= 2120 && player1.x <= 3330))
+                            {
+                                player1.y += playerSpeed * 0.55;
+                            }
+                        }
+                        else
+                        {
+                            player1.y += playerSpeed * 0.55;
+                        }
+                    }
+                }
+                else if (cloroquinaPhase && !bossPhase)
+                {
+                    if (player1.y + (playerSpeed * 0.55) <= 3830)
+                    {
+                        player1.y += playerSpeed * 0.55;
+                    }
+                }
+            }
+
+            if (IsKeyPressed(KEY_A) || IsKeyDown(KEY_A))
+            {
+                if (bossPhase)
+                {
+                    if (player1.x - (playerSpeed * 0.55) >= 300)
+                    {
+                        if (score < enemyAmount + 4)
+                        {
+                            if (!(player1.x - (playerSpeed * 0.55) < 3330 && player1.x - (playerSpeed * 0.55) > 2120 && player1.y >= 1200 && player1.y <= 2390))
+                            {
+                                player1.x -= playerSpeed * 0.55;
+                            }
+                        }
+                        else
+                        {
+
+                            player1.x -= playerSpeed * 0.55;
+                        }
+                    }
+                }
+                else if (cloroquinaPhase && !bossPhase)
+                {
+                    if (player1.x - (playerSpeed * 0.55) >= 80)
+                    {
+                        player1.x -= playerSpeed * 0.55;
+                    }
+                }
+            }
+
+            //  Camera
+            if ((previousY != player1.y) || (previousX != player1.x))
+            {
+                camera.target.x += ((player1.x) - camera.target.x) * 0.025;
+                camera.target.y += ((player1.y) - camera.target.y) * 0.025;
+            }
+
             // Tela Transição entre fase cloroquina e boss
             if (score >= enemyAmount && phaseAnnouncement == 0 && bossPhase == 0)
             {
@@ -336,6 +442,7 @@ int main()
             BeginDrawing();
             ClearBackground(BLACK);
 
+            // Tela anuncio de mudança de fase
             if (phaseAnnouncement)
             {
                 DrawText(phaseTransitionText, (screenWidth / 2) - (MeasureText(phaseTransitionText, 70) / 2), (screenHeight / 2) - 50, 70, RED);
@@ -352,6 +459,10 @@ int main()
             else if (bossPhase)
             {
                 DrawTextureEx(BossMap, (Vector2){.x = 0, .y = 0}, 0, 1.8, WHITE);
+                if (score < enemyAmount + 4)
+                {
+                    DrawTextureEx(FireCircle, (Vector2){.x = 0, .y = 0}, 0, 1.8, WHITE);
+                }
             }
 
             // Rendering Player - Exceto na phase announcemnt
@@ -359,7 +470,6 @@ int main()
             {
                 if (pLife > 0)
                 {
-                    // DrawRectangleRec(player1, RED);
                     if (previousX > player1.x)
                     {
                         animationTime += GetFrameTime();
@@ -522,6 +632,11 @@ int main()
                     {
                         enemylifeBars[i].width -= 10;
                     }
+                    if (CheckCollisionRecs(vaccines[vaccinesAvaliable - 1].weapon, enemies[i]))
+                    {
+                        enemylifeBars[i].width -= 30;
+                        vacCollided = 1;
+                    }
                     // Rendering each enemy box
                     if (enemylifeBars[i].width > 0)
                     {
@@ -551,11 +666,16 @@ int main()
                     DrawTextureEx(BolsonaroBoss, (Vector2){.x = BolsonaroRec.x, .y = BolsonaroRec.y}, 0, 1, WHITE);
                     DrawRectangleRec(BolsonaroLifeBar, GREEN);
                 }
-                if (CheckCollisionRecs(weaponRight, BolsonaroRec) || CheckCollisionRecs(weaponLeft, BolsonaroRec))
+                if ((CheckCollisionRecs(weaponRight, BolsonaroRec) || CheckCollisionRecs(weaponLeft, BolsonaroRec)) && score == enemyAmount + 4)
                 {
                     BolsonaroLifeBar.width -= 10;
                 }
-                if (distanceToEnemy(player1.x, player1.y, BolsonaroRec.x, BolsonaroRec.y) <= 1000 && score == 0)
+                if (CheckCollisionRecs(vaccines[vaccinesAvaliable - 1].weapon, BolsonaroRec) && score == enemyAmount + 4)
+                {
+                    BolsonaroLifeBar.width -= 30;
+                    vacCollided = 1;
+                }
+                if ((distanceToEnemy(player1.x, player1.y, BolsonaroRec.x, BolsonaroRec.y) <= 1000) && score == enemyAmount + 4)
                 {
                     enemyDynamic(player1, &BolsonaroRec, enemySpeed * 1.15, &pLife);
                 }
@@ -563,11 +683,17 @@ int main()
                 BolsonaroLifeBar.x = BolsonaroRec.x;
                 BolsonaroLifeBar.y = BolsonaroRec.y - 20;
 
+                // Bozo Kids
                 for (int i = 0; i < 4; ++i)
                 {
                     if (CheckCollisionRecs(weaponRight, bosses[i]) || CheckCollisionRecs(weaponLeft, bosses[i]))
                     {
-                        bossesLifeBars[i].width -= 10;
+                        bossesLifeBars[i].width -= 15;
+                    }
+                    if (CheckCollisionRecs(vaccines[vaccinesAvaliable - 1].weapon, bosses[i]))
+                    {
+                        bossesLifeBars[i].width -= 30;
+                        vacCollided = 1;
                     }
                     // Rendering each enemy box
                     if (bossesLifeBars[i].width > 0)
@@ -592,7 +718,7 @@ int main()
                 }
             }
 
-            // Mecânica de vida do player e GameOver -> Nova branch
+            // Mecânica de vida do player e GameOver
             if (pLife <= 0)
             {
                 if (isAlive)
@@ -607,11 +733,11 @@ int main()
                 }
                 else
                 {
-                    gameOverMode = 1;
+                    winMode = -1;
                 }
             }
 
-            // Exibindo barra de vida e score - Exceto na phase announcement
+            // Exibindo barra de vida, score e ataques - Exceto na phase announcement
             if (!phaseAnnouncement)
             {
                 // Combat mechanics
@@ -647,6 +773,81 @@ int main()
                     weaponLeft.y = player1.y + (player1.height / 2);
                 }
 
+                if (IsKeyPressed(KEY_N))
+                {
+                    if (vaccinesAvaliable > 0 && !shootingVac)
+                    {
+                        vaccines[vaccinesAvaliable - 1].weapon.width = vacRight.width * 0.3;
+                        vaccines[vaccinesAvaliable - 1].weapon.height = vacRight.height * 0.3;
+
+                        vaccines[vaccinesAvaliable - 1].initialX = player1.x + player1.width;
+                        vaccines[vaccinesAvaliable - 1].initialY = player1.y + 2;
+
+                        vaccines[vaccinesAvaliable - 1].weapon.x = player1.x + player1.width;
+                        vaccines[vaccinesAvaliable - 1].weapon.y = player1.y + 2;
+                        shootingVac = 1;
+                    }
+                }
+                else if (!shootingVac && vaccinesAvaliable > 0)
+                {
+                    vaccines[vaccinesAvaliable - 1].weapon.width = 0;
+                    vaccines[vaccinesAvaliable - 1].weapon.height = 0;
+
+                    vaccines[vaccinesAvaliable - 1].weapon.x = player1.x + (player1.width / 2);
+                    vaccines[vaccinesAvaliable - 1].weapon.y = player1.y + (player1.height / 2);
+                }
+
+                if (IsKeyPressed(KEY_M))
+                {
+                    if (vaccinesAvaliable > 0 && !shootingVac)
+                    {
+                        vaccines[vaccinesAvaliable - 1].weapon.width = vacRight.width * 0.3;
+                        vaccines[vaccinesAvaliable - 1].weapon.height = vacRight.height * 0.3;
+
+                        vaccines[vaccinesAvaliable - 1].initialX = player1.x + player1.width;
+                        vaccines[vaccinesAvaliable - 1].initialY = player1.y + 2;
+
+                        vaccines[vaccinesAvaliable - 1].weapon.x = player1.x + player1.width;
+                        vaccines[vaccinesAvaliable - 1].weapon.y = player1.y + 2;
+                        shootingVac = 2;
+                    }
+                }
+                else if (!shootingVac && vaccinesAvaliable > 0)
+                {
+                    vaccines[vaccinesAvaliable - 1].weapon.width = 0;
+                    vaccines[vaccinesAvaliable - 1].weapon.height = 0;
+
+                    vaccines[vaccinesAvaliable - 1].weapon.x = player1.x + (player1.width / 2);
+                    vaccines[vaccinesAvaliable - 1].weapon.y = player1.y + (player1.height / 2);
+                }
+
+                if (shootingVac)
+                {
+                    // Criar função para checar isso
+                    if (distanceToEnemy(vaccines[vaccinesAvaliable - 1].weapon.x, 0, vaccines[vaccinesAvaliable - 1].initialX, 0) < 1600 && !vacCollided)
+                    {
+
+                        if (shootingVac == 1)
+                        {
+                            DrawTextureEx(vacLeft, (Vector2){.x = vaccines[vaccinesAvaliable - 1].weapon.x, .y = vaccines[vaccinesAvaliable - 1].weapon.y}, 0, 0.3, WHITE);
+                            vaccines[vaccinesAvaliable - 1].weapon.x -= enemySpeed * 0.8;
+                        }
+                        else if (shootingVac == 2)
+                        {
+                            DrawTextureEx(vacRight, (Vector2){.x = vaccines[vaccinesAvaliable - 1].weapon.x, .y = vaccines[vaccinesAvaliable - 1].weapon.y}, 0, 0.3, WHITE);
+                            vaccines[vaccinesAvaliable - 1].weapon.x += enemySpeed * 0.8;
+                        }
+                    }
+                    else
+                    {
+                        vaccines[vaccinesAvaliable - 1].weapon.x = 999999;
+                        vaccines[vaccinesAvaliable - 1].weapon.y = 999999;
+                        --vaccinesAvaliable;
+                        shootingVac = 0;
+                        vacCollided = 0;
+                    }
+                }
+
                 // Showcasing Life Bar
                 lifeBarPosX = camera.target.x - (2 * camera.offset.x);
                 lifeBarPosY = camera.target.y - (2 * camera.offset.y);
@@ -658,11 +859,16 @@ int main()
                 sprintf(scoreText, "SCORE: %d", score);
                 DrawText(scoreText, lifeBarPosX + 30, lifeBarPosY + playerLifeBar.height + 50, 50, WHITE);
 
+                // Showcasing Vacs Avaliable
+                sprintf(vacAvaliableText, "x%d", vaccinesAvaliable);
+                DrawText(vacAvaliableText, lifeBarPosX + 100 + MeasureText(scoreText, 50), lifeBarPosY + playerLifeBar.height + 50, 50, WHITE);
+
+                // Showcasing Time Elapsed
                 sprintf(timerDisplay, "timer: %.2lf", gameTime - gameInitTime);
                 DrawText(timerDisplay, lifeBarPosX + 30, lifeBarPosY + playerLifeBar.height + 120, 50, WHITE);
 
-                // sprintf(posText, "x = %f y = %f", player1.x, player1.y);
-                // DrawText(posText, lifeBarPosX + 30, lifeBarPosY + playerLifeBar.height + 120, 50, WHITE);
+                sprintf(posText, "x = %f y = %f", player1.x, player1.y);
+                DrawText(posText, lifeBarPosX + 30, lifeBarPosY + playerLifeBar.height + 180, 50, WHITE);
             }
 
             score = 0;

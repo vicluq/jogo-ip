@@ -67,7 +67,7 @@ char instructions[90] = "Use [W] [A] [S] [D] para se mover e [J] [K] para atacar
 
 // Enemy Utilities
 Vector2 enemiesPositions[20] = {
-    {.x = 100, .y = 40},  // 1
+    {.x = 100, .y = 40},    // 1
     {.x = 1305, .y = 636},  // 2
     {.x = 530, .y = 1213},  // 3
     {.x = 1600, .y = 1920}, // 4

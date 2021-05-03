@@ -133,7 +133,7 @@ int main()
     }
 
     // Enemies
-    const int enemySpeed = 15, enemyAmount = 4;
+    const int enemySpeed = 15, enemyAmount = 20;
     Texture cloroquina = LoadTexture("./assets/Cloroquina/cloroquina-enemy.png");
     Rectangle *enemies = (Rectangle *)malloc(sizeof(Rectangle) * enemyAmount);
     Rectangle *enemylifeBars = (Rectangle *)malloc(sizeof(Rectangle) * enemyAmount);
@@ -710,7 +710,7 @@ int main()
                 }
                 if ((CheckCollisionRecs(weaponRight, BolsonaroRec) || CheckCollisionRecs(weaponLeft, BolsonaroRec)) && score == enemyAmount + 4)
                 {
-                    BolsonaroLifeBar.width -= 100;
+                    BolsonaroLifeBar.width -= 10;
                 }
                 if (CheckCollisionRecs(vaccines[vaccinesAvaliable - 1].weapon, BolsonaroRec) && score == enemyAmount + 4)
                 {
@@ -730,7 +730,7 @@ int main()
                 {
                     if (CheckCollisionRecs(weaponRight, bosses[i]) || CheckCollisionRecs(weaponLeft, bosses[i]))
                     {
-                        bossesLifeBars[i].width -= 150;
+                        bossesLifeBars[i].width -= 10;
                     }
                     if (CheckCollisionRecs(vaccines[vaccinesAvaliable - 1].weapon, bosses[i]))
                     {
